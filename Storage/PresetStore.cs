@@ -42,6 +42,9 @@ public sealed class PresetFile
     /// <summary>Reveal masked passwords on hover (off by default).</summary>
     public bool HoverReveal { get; set; }
 
+    /// <summary>Color theme: "system" (follow Windows), "light" or "dark".</summary>
+    public string Theme { get; set; } = "system";
+
     /// <summary>Target vault unlock time in seconds (Argon2id), 1–10 s, default 1 s.</summary>
     public int UnlockTargetSeconds { get; set; } = 1;
 }

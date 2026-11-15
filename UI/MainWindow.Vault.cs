@@ -668,8 +668,8 @@ public partial class MainWindow
 
     /// <summary>Re-evaluates the entry password info when the Critical flag changes.</summary>
     private void CriticalCheck_Changed(object sender, RoutedEventArgs e) => UpdateEntryPasswordInfo();
-    private static readonly Brush WarningBrush = Frozen("#E65100");
-    private static readonly Brush GoodBrush = Frozen("#2E7D32");
+    private static Brush WarningBrush => ThemeManager.Brush("WarningBrush");
+    private static Brush GoodBrush => ThemeManager.Brush("SuccessBrush");
 
     /// <summary>Counts of items, reused and weak passwords – shown under the search box.</summary>
     /// <summary>Updates the vault health summary line under the search box.</summary>
@@ -1386,7 +1386,7 @@ public partial class MainWindow
     private void ShowEntryStatus(string msg, bool error = false)
     {
         EntryStatusText.Text = msg;
-        EntryStatusText.Foreground = error ? System.Windows.Media.Brushes.Firebrick : System.Windows.Media.Brushes.ForestGreen;
+        EntryStatusText.Foreground = ThemeManager.Brush(error ? "DangerBrush" : "SuccessBrush");
         _entryStatusTimer.Stop();
         _entryStatusTimer.Start();
     }

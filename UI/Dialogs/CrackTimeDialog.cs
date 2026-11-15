@@ -152,18 +152,12 @@ internal sealed class CrackTimeDialog : Window
     /// <summary>Red (under a day), orange (under a year), green (under 1000 years), dark green (longer).</summary>
     private static Brush SeverityBrush(int severity) => severity switch
     {
-        0 => Frozen(Color.FromRgb(0xD3, 0x2F, 0x2F)),
-        1 => Frozen(Color.FromRgb(0xF5, 0x7C, 0x00)),
-        2 => Frozen(Color.FromRgb(0x38, 0x8E, 0x3C)),
-        _ => Frozen(Color.FromRgb(0x1B, 0x5E, 0x20))
+        0 => Res("Strength1Brush"),
+        1 => Res("Strength2Brush"),
+        2 => Res("Strength3Brush"),
+        _ => Res("Strength4Brush")
     };
 
-    private static Brush Frozen(Color c)
-    {
-        var b = new SolidColorBrush(c);
-        b.Freeze();
-        return b;
-    }
 
     private static Style Sec() => (Style)Application.Current.Resources["SectionLabel"];
 

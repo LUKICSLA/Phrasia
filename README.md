@@ -1,6 +1,10 @@
-# Phrasia
+<p align="center">
+  <img src="Assets/phrasia-logo.png" alt="Phrasia logo" width="160">
+</p>
 
-**Offline passphrase generator and encrypted password vault for Windows.**
+<h1 align="center">Phrasia</h1>
+
+<p align="center"><b>Offline passphrase generator and encrypted password vault for Windows.</b></p>
 
 Phrasia never sends your passwords or any other data anywhere — no cloud, no accounts, no
 telemetry. Everything stays on your computer.
@@ -19,6 +23,9 @@ telemetry. Everything stays on your computer.
 - Strength estimate and "time to crack" for every password
 - Presets, recommended mode, several variants at once
 - Generated passwords are hidden by default
+
+**Look & feel**
+- Light and dark theme – follows the Windows app mode by default, or pick one in the header
 
 **Password vault**
 - Entries with title, username, password, URL and notes

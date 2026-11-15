@@ -10,9 +10,9 @@ namespace Phrasia;
 
 public partial class MainWindow : Window
 {
-    private static readonly Brush DigitBrush  = Frozen("#2563EB"); // digits – blue
-    private static readonly Brush SymbolBrush = Frozen("#E11D48"); // separators/symbols – pink-red
-    private static readonly Brush LetterBrush = Frozen("#1E1F2B");
+    private static Brush DigitBrush  => ThemeManager.Brush("DigitBrush");  // digits – blue
+    private static Brush SymbolBrush => ThemeManager.Brush("SymbolBrush"); // separators/symbols – pink-red
+    private static Brush LetterBrush => ThemeManager.Brush("TextBrush");
 
     private readonly Dictionary<string, string[]> _wordCache = new();
     private string _current = "";
@@ -26,6 +26,54 @@ public partial class MainWindow : Window
         InitGeneratorPrivacy();
         InitVault();
         _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
+        UpdateThemeButton();
+        ThemeManager.Changed += OnThemeChanged;
+        Closed += (_, _) => ThemeManager.Changed -= OnThemeChanged;
+    }
+
+    /// <summary>Cycles the theme System → Light → Dark and remembers the choice.</summary>
+    private void Theme_Click(object sender, RoutedEventArgs e)
+    {
+        var next = ThemeManager.Mode switch
+        {
+            ThemeMode.System => ThemeMode.Light,
+            ThemeMode.Light => ThemeMode.Dark,
+            _ => ThemeMode.System
+        };
+        ThemeManager.Apply(next);
+        _presetFile.Theme = ThemeManager.ToSetting(next);
+        PresetStore.Save(_presetFile);
+        Log.Info("Theme switched to {Mode}", next);
+    }
+
+    /// <summary>Shows the current theme mode on the header button.</summary>
+    private void UpdateThemeButton()
+    {
+        ThemeLabel.Text = ThemeManager.Mode.ToString();
+        ThemeIcon.Text = ThemeManager.Mode switch
+        {
+            ThemeMode.Light => "\uE706",   // sun
+            ThemeMode.Dark => "\uE708",    // moon
+            _ => "\uE7F4"                  // display (follow Windows)
+        };
+    }
+
+    /// <summary>Re-applies colors that are set from code (password digits/symbols, strength, vault health).</summary>
+    private void OnThemeChanged()
+    {
+        UpdateThemeButton();
+        UpdateMainPasswordDisplay();
+        if (_lastBits > 0)
+        {
+            var (_, _, brush) = Rate(_lastBits);
+            EntropyBar.Foreground = brush;
+            RatingText.Foreground = brush;
+        }
+        if (_vault is not null && !IsVaultBusy)
+        {
+            UpdateVaultHealth();
+            UpdateEntryPasswordInfo();
+        }
     }
 
     /// <summary>UI logger – NEVER write passwords, entry titles or usernames to it (see Logging.cs).</summary>
@@ -551,22 +599,15 @@ public partial class MainWindow : Window
 
     private static string SelTag(ComboBox cb) => (cb.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
 
-    /// <summary>Strength tier: a short label, a witty (but accurate) quip and a color. Times assume an offline attack of ~10^12 guesses/s against a fast hash (worst case).</summary>
+    /// <summary>Strength tier: a short label, a witty (but accurate) quip and a (theme) color. Times assume an offline attack of ~10^12 guesses/s against a fast hash (worst case).</summary>
     private static (string Label, string Quip, Brush Color) Rate(double bits) => bits switch
     {
-        < 28  => ("Paper lock",    "Cracked before you finish typing it. Add more words!",                     Frozen("#B71C1C")),
-        < 40  => ("Hacker snack",  "A GPU chews through this in under a second. Crunchy.",                     Frozen("#D32F2F")),
-        < 60  => ("Sibling-proof", "Keeps your little brother out. A cracking rig needs days at most.",            Frozen("#F57C00")),
-        < 80  => ("Strong",        "Good for everyday accounts. Offline cracking: weeks to millennia.",       Frozen("#388E3C")),
-        < 100 => ("Fort Knox",     "Very strong. Even a GPU farm would need tens of thousands of years or more.", Frozen("#1B5E20")),
-        _     => ("Cosmic",        "The Sun burns out before anyone cracks this. Overkill – in the best way.", Frozen("#6D4AFF"))
+        < 28  => ("Paper lock",    "Cracked before you finish typing it. Add more words!",                     ThemeManager.Brush("Strength0Brush")),
+        < 40  => ("Hacker snack",  "A GPU chews through this in under a second. Crunchy.",                     ThemeManager.Brush("Strength1Brush")),
+        < 60  => ("Sibling-proof", "Keeps your little brother out. A cracking rig needs days at most.",            ThemeManager.Brush("Strength2Brush")),
+        < 80  => ("Strong",        "Good for everyday accounts. Offline cracking: weeks to millennia.",       ThemeManager.Brush("Strength3Brush")),
+        < 100 => ("Fort Knox",     "Very strong. Even a GPU farm would need tens of thousands of years or more.", ThemeManager.Brush("Strength4Brush")),
+        _     => ("Cosmic",        "The Sun burns out before anyone cracks this. Overkill – in the best way.", ThemeManager.Brush("Strength5Brush"))
     };
 
-    /// <summary>Creates and freezes a brush from a hex color string.</summary>
-    private static Brush Frozen(string hex)
-    {
-        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-        b.Freeze();
-        return b;
-    }
 }

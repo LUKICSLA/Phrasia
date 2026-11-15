@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Phrasia" Width="1000" Height="760" MinWidth="880" MinHeight="640"
-        WindowStartupLocation="CenterScreen" Background="{StaticResource WindowBrush}"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBrush}"
         Icon="pack://application:,,,/Assets/phrasia-96.png"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
-        Foreground="{StaticResource TextBrush}"
+        Foreground="{DynamicResource TextBrush}"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Display"
         Loaded="Window_Loaded" Closing="Window_Closing"
         PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseDown="Window_PreviewMouseDown">
@@ -13,9 +13,16 @@
     <DockPanel>
 
         <!-- ===================== HEADER ===================== -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="24,14">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="24,14">
             <DockPanel>
+                <Button x:Name="ThemeButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                        Margin="8,0,0,0" Click="Theme_Click" ToolTip="Switch the color theme: System → Light → Dark">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="ThemeIcon" Style="{StaticResource Icon}" Text="&#xE706;"/>
+                        <TextBlock x:Name="ThemeLabel" Text="System"/>
+                    </StackPanel>
+                </Button>
                 <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
                         Click="GitHub_Click" ToolTip="https://github.com/LUKICSLA">
                     <StackPanel Orientation="Horizontal">
@@ -29,10 +36,10 @@
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Phrasia" FontSize="20" FontWeight="Bold"/>
-                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="6" Padding="7,1"
+                            <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" Padding="7,1"
                                     Margin="10,0,0,0" VerticalAlignment="Center">
                                 <TextBlock x:Name="HeaderVersionText" FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{StaticResource AccentDarkBrush}"/>
+                                           Foreground="{DynamicResource AccentDarkBrush}"/>
                             </Border>
                         </StackPanel>
                         <TextBlock Text="Strong passphrases · encrypted vault" Style="{StaticResource HintText}"
@@ -43,10 +50,10 @@
         </Border>
 
         <!-- ===================== FOOTER ===================== -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
-                Background="{StaticResource SurfaceBrush}" Padding="24,8">
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0"
+                Background="{DynamicResource SurfaceBrush}" Padding="24,8">
             <DockPanel>
-                <TextBlock x:Name="VersionText" DockPanel.Dock="Right" Foreground="{StaticResource AccentBrush}"
+                <TextBlock x:Name="VersionText" DockPanel.Dock="Right" Foreground="{DynamicResource AccentBrush}"
                            FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
                 <CheckBox x:Name="CaptureProtectionCheck" DockPanel.Dock="Right" IsChecked="True"
                           FontSize="12" Margin="0,0,22,0" VerticalAlignment="Center"
@@ -54,39 +61,39 @@
                           ToolTip="Screenshots, screen recording and screen sharing show a black window instead of your passwords"
                           Checked="CaptureProtection_Changed" Unchecked="CaptureProtection_Changed"/>
                 <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
-                    <Hyperlink Click="OpenLogs_Click" Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}"
+                    <Hyperlink Click="OpenLogs_Click" Foreground="{DynamicResource MutedBrush}" TextDecorations="{x:Null}"
                                ToolTip="View decrypted local logs (encrypted on disk, never contain passwords)">Logs</Hyperlink>
                 </TextBlock>
                 <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
-                    <Hyperlink Click="OpenAbout_Click" Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}"
+                    <Hyperlink Click="OpenAbout_Click" Foreground="{DynamicResource MutedBrush}" TextDecorations="{x:Null}"
                                ToolTip="Version, license (GPL-3.0), source code and third-party notices">About &amp; licenses</Hyperlink>
                 </TextBlock>
                 <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
                     <Hyperlink NavigateUri="https://github.com/LUKICSLA" RequestNavigate="GitHub_RequestNavigate"
-                               Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}">
+                               Foreground="{DynamicResource MutedBrush}" TextDecorations="{x:Null}">
                         github.com/LUKICSLA
                     </Hyperlink>
                 </TextBlock>
-                <TextBlock x:Name="AuthorText" Foreground="{StaticResource SubtleBrush}" FontSize="12"
+                <TextBlock x:Name="AuthorText" Foreground="{DynamicResource SubtleBrush}" FontSize="12"
                            VerticalAlignment="Center"/>
             </DockPanel>
         </Border>
 
         <!-- ===================== PRIVACY BANNER ===================== -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource PrivacyBrush}"
-                BorderBrush="{StaticResource PrivacyLineBrush}" BorderThickness="0,0,0,1" Padding="24,9">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource PrivacyBrush}"
+                BorderBrush="{DynamicResource PrivacyLineBrush}" BorderThickness="0,0,0,1" Padding="24,9">
             <DockPanel LastChildFill="True">
                 <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
                         Margin="12,0,0,0" Click="KoFi_Click" ToolTip="https://ko-fi.com/lukicsla">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xEB51;" Foreground="{StaticResource KoFiBrush}"/>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xEB51;" Foreground="{DynamicResource KoFiBrush}"/>
                         <TextBlock Text="Support on Ko-fi"/>
                     </StackPanel>
                 </Button>
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="16" VerticalAlignment="Center"
-                           Foreground="{StaticResource PrivacyIconBrush}"/>
+                           Foreground="{DynamicResource PrivacyIconBrush}"/>
                 <TextBlock VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"
-                           Foreground="{StaticResource PrivacyTextBrush}" FontSize="12.5">
+                           Foreground="{DynamicResource PrivacyTextBrush}" FontSize="12.5">
                     <Run Text="Fully offline." FontWeight="Bold"/>
                     <Run Text="Phrasia never sends your passwords or any data anywhere — no cloud, no tracking, no telemetry, no analytics. Everything stays on this computer, and your vault is encrypted with a key only your master password can unlock."/>
                 </TextBlock>
@@ -118,13 +125,13 @@
                                 <TextBlock Text="Settings" Style="{StaticResource CardTitle}"/>
 
                                 <!-- Recommended mode -->
-                                <Border x:Name="RecommendedCard" Background="{StaticResource AccentSoftBrush}"
-                                        BorderBrush="#E0D8FF" BorderThickness="1" CornerRadius="10"
+                                <Border x:Name="RecommendedCard" Background="{DynamicResource AccentSoftBrush}"
+                                        BorderBrush="{DynamicResource AccentLineBrush}" BorderThickness="1" CornerRadius="10"
                                         Padding="14,12" Margin="0,14,0,0">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE735;"
-                                                       Foreground="{StaticResource AccentBrush}" FontSize="16"/>
+                                                       Foreground="{DynamicResource AccentBrush}" FontSize="16"/>
                                             <CheckBox x:Name="RecommendedCheck" DockPanel.Dock="Right" VerticalAlignment="Center"
                                                       ToolTip="Turn on recommended settings"
                                                       Checked="Recommended_Changed" Unchecked="Recommended_Changed"/>
@@ -311,7 +318,7 @@
                                     <TextBlock Text="GENERATED PASSWORD" Style="{StaticResource SectionLabel}" Margin="0"
                                                VerticalAlignment="Center"/>
                                 </DockPanel>
-                                <Border x:Name="PasswordBorder" Background="#FAF9FF" BorderBrush="#E4DEFF" BorderThickness="1"
+                                <Border x:Name="PasswordBorder" Background="{DynamicResource PasswordBgBrush}" BorderBrush="{DynamicResource PasswordLineBrush}" BorderThickness="1"
                                         CornerRadius="10" Padding="18,16" Margin="0,10,0,0" MinHeight="78"
                                         MouseEnter="PasswordBorder_MouseEnter" MouseLeave="PasswordBorder_MouseLeave"
                                         ToolTip="Hidden – turn on Show to see it. Copy works anyway (Copy button or Ctrl+C).">
@@ -363,7 +370,7 @@
                                         </Button>
                                     </StackPanel>
                                     <TextBlock x:Name="StatusText" VerticalAlignment="Center" HorizontalAlignment="Right"
-                                               Foreground="#2E7D32" TextWrapping="Wrap" Margin="12,0,0,0"/>
+                                               Foreground="{DynamicResource SuccessBrush}" TextWrapping="Wrap" Margin="12,0,0,0"/>
                                 </DockPanel>
                             </StackPanel>
                         </Border>
@@ -395,7 +402,7 @@
                                                 <TextBlock x:Name="Plain" Text="{Binding Value}" Visibility="Collapsed"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock x:Name="Masked" Text="{Binding Mask}"
-                                                           Foreground="{StaticResource SubtleBrush}"/>
+                                                           Foreground="{DynamicResource SubtleBrush}"/>
                                             </Grid>
                                             <DataTemplate.Triggers>
                                                 <!-- reveal on hover (only when Reveal on hover is enabled) or via the Show toggle -->
@@ -437,7 +444,7 @@
                     <Border Style="{StaticResource Card}" Width="440" Padding="28,26"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,16">
                         <StackPanel>
-                            <Border Width="56" Height="56" CornerRadius="16" Background="{StaticResource HeroBrush}"
+                            <Border Width="56" Height="56" CornerRadius="16" Background="{DynamicResource HeroBrush}"
                                     HorizontalAlignment="Left">
                                 <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="24" Foreground="White"
                                            Margin="0" HorizontalAlignment="Center"/>
@@ -466,14 +473,14 @@
                                              FontSize="15"/>
                                 </StackPanel>
                                 <Border x:Name="DeviceBindNotice" Margin="0,16,0,0" Padding="12,10"
-                                        Background="{StaticResource PrivacyBrush}" BorderBrush="{StaticResource PrivacyLineBrush}"
+                                        Background="{DynamicResource PrivacyBrush}" BorderBrush="{DynamicResource PrivacyLineBrush}"
                                         BorderThickness="1" CornerRadius="8">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Style="{StaticResource Icon}" Text="&#xE1A7;" FontSize="13"
-                                                       Foreground="{StaticResource PrivacyIconBrush}"/>
+                                                       Foreground="{DynamicResource PrivacyIconBrush}"/>
                                             <TextBlock Text="Bound to this Windows account" FontWeight="SemiBold"
-                                                       Margin="8,0,0,0" Foreground="{StaticResource PrivacyTextBrush}"/>
+                                                       Margin="8,0,0,0" Foreground="{DynamicResource PrivacyTextBrush}"/>
                                         </StackPanel>
                                         <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0" TextWrapping="Wrap"
                                                    Text="This vault will open ONLY on this computer and Windows account — not even with the correct password and PIM elsewhere. Right after creating it, use 'Export device key…' and keep that file safe: it (plus your master password) is the only way to move the vault to another PC or recover it after a Windows reinstall."/>
@@ -488,13 +495,13 @@
                                 <TextBlock x:Name="PimHint" Style="{StaticResource HintText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
 
-                            <TextBlock x:Name="LockError" Foreground="#C62828" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                            <TextBlock x:Name="LockoutText" Foreground="#E65100" FontWeight="SemiBold"
+                            <TextBlock x:Name="LockError" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="LockoutText" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"
                                        TextWrapping="Wrap" Margin="0,4,0,0"/>
                             <Button x:Name="UnlockButton" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
                                     Padding="18,11" Click="Unlock_Click"/>
 
-                            <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                            <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0"
                                     Margin="0,18,0,0" Padding="0,14,0,0">
                                 <StackPanel>
                                     <WrapPanel>
@@ -525,14 +532,14 @@
                                     </WrapPanel>
                                     <Button x:Name="EraseVaultButton" Style="{StaticResource GhostButton}"
                                             HorizontalAlignment="Left" Margin="0,2,0,0" Click="EraseVault_Click"
-                                            BorderBrush="#F3C7C7"
+                                            BorderBrush="{DynamicResource DangerLineBrush}"
                                             ToolTip="Securely erase the vault and create a new one (all saved passwords will be lost)">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Foreground="#C62828"/>
-                                            <TextBlock Text="Forgot password? Erase vault…" Foreground="#C62828"/>
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Foreground="{DynamicResource DangerBrush}"/>
+                                            <TextBlock Text="Forgot password? Erase vault…" Foreground="{DynamicResource DangerBrush}"/>
                                         </StackPanel>
                                     </Button>
-                                    <TextBlock x:Name="VaultPathText" Foreground="{StaticResource SubtleBrush}" FontSize="11"
+                                    <TextBlock x:Name="VaultPathText" Foreground="{DynamicResource SubtleBrush}" FontSize="11"
                                                TextWrapping="Wrap" Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
@@ -567,7 +574,7 @@
                                     <TextBox x:Name="SearchBox" Padding="32,7,8,7" TextChanged="Search_TextChanged"
                                              ToolTip="Search by title, username or website"/>
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="13"
-                                               Foreground="{StaticResource SubtleBrush}" Margin="12,6,0,0"
+                                               Foreground="{DynamicResource SubtleBrush}" Margin="12,6,0,0"
                                                HorizontalAlignment="Left" IsHitTestVisible="False"/>
                                 </Grid>
 
@@ -575,11 +582,11 @@
                                            ToolTip="Reused = the same password in more than one item. Weak = estimated strength under 60 bits."/>
 
                                 <Border x:Name="AttentionFilterBar" DockPanel.Dock="Top" Visibility="Collapsed"
-                                        Background="#FFF1E0" CornerRadius="8" Padding="10,6" Margin="0,8,0,0">
+                                        Background="{DynamicResource WarningSoftBrush}" CornerRadius="8" Padding="10,6" Margin="0,8,0,0">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="8,3"
                                                 FontSize="12" Click="ClearAttentionFilter_Click" Content="Show all"/>
-                                        <TextBlock x:Name="AttentionFilterText" FontSize="12" Foreground="#E65100"
+                                        <TextBlock x:Name="AttentionFilterText" FontSize="12" Foreground="{DynamicResource WarningBrush}"
                                                    FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                     </DockPanel>
                                 </Border>
@@ -654,44 +661,44 @@
                                             <DockPanel ToolTip="{Binding StrengthText}">
                                                 <!-- red bar for critical accounts -->
                                                 <Border DockPanel.Dock="Left" Width="3" CornerRadius="2" Margin="0,1,7,1"
-                                                        Background="#E53935"
+                                                        Background="{DynamicResource DangerStrongBrush}"
                                                         Visibility="{Binding Critical, Converter={StaticResource BoolToVis}}"/>
 
                                                 <!-- right: badges + small strength indicator -->
                                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FDECEC"
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="{DynamicResource DangerSoftBrush}"
                                                             Visibility="{Binding Critical, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="CRIT" Style="{StaticResource BadgeTextSmall}" Foreground="#C62828"/>
+                                                        <TextBlock Text="CRIT" Style="{StaticResource BadgeTextSmall}" Foreground="{DynamicResource DangerBrush}"/>
                                                     </Border>
-                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FFF1E0"
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="{DynamicResource WarningSoftBrush}"
                                                             Visibility="{Binding IsReused, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="REUSED" Style="{StaticResource BadgeTextSmall}" Foreground="#E65100"/>
+                                                        <TextBlock Text="REUSED" Style="{StaticResource BadgeTextSmall}" Foreground="{DynamicResource WarningBrush}"/>
                                                     </Border>
-                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FFF8DC"
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="{DynamicResource CautionSoftBrush}"
                                                             Visibility="{Binding IsWeak, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="WEAK" Style="{StaticResource BadgeTextSmall}" Foreground="#9A6A00"/>
+                                                        <TextBlock Text="WEAK" Style="{StaticResource BadgeTextSmall}" Foreground="{DynamicResource CautionBrush}"/>
                                                     </Border>
                                                     <ProgressBar Width="34" Height="4" Maximum="128" Margin="7,0,0,0"
                                                                  VerticalAlignment="Center" Value="{Binding StrengthBits, Mode=OneWay}"
                                                                  Visibility="{Binding HasPassword, Converter={StaticResource BoolToVis}}">
                                                         <ProgressBar.Style>
                                                             <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
-                                                                <Setter Property="Foreground" Value="#B71C1C"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource Strength0Brush}"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding StrengthLevel}" Value="1">
-                                                                        <Setter Property="Foreground" Value="#D32F2F"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Strength1Brush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding StrengthLevel}" Value="2">
-                                                                        <Setter Property="Foreground" Value="#F57C00"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Strength2Brush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding StrengthLevel}" Value="3">
-                                                                        <Setter Property="Foreground" Value="#388E3C"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Strength3Brush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding StrengthLevel}" Value="4">
-                                                                        <Setter Property="Foreground" Value="#1B5E20"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Strength4Brush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding StrengthLevel}" Value="5">
-                                                                        <Setter Property="Foreground" Value="#6D4AFF"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Strength5Brush}"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -703,7 +710,7 @@
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
                                                     <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold"/>
                                                     <Run Text="{Binding UsernameSuffix, Mode=OneWay}" FontSize="11"
-                                                         Foreground="{StaticResource MutedBrush}"/>
+                                                         Foreground="{DynamicResource MutedBrush}"/>
                                                 </TextBlock>
                                             </DockPanel>
                                         </DataTemplate>
@@ -717,9 +724,9 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
                                 <StackPanel>
                                     <DockPanel>
-                                        <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="#FDECEC"
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="{DynamicResource DangerSoftBrush}"
                                                 Padding="8,3" Visibility="{Binding IsChecked, ElementName=CriticalCheck, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="CRITICAL" Style="{StaticResource BadgeText}" FontSize="11" Foreground="#C62828"/>
+                                            <TextBlock Text="CRITICAL" Style="{StaticResource BadgeText}" FontSize="11" Foreground="{DynamicResource DangerBrush}"/>
                                         </Border>
                                         <TextBlock x:Name="EditorTitle" FontSize="19" FontWeight="Bold"
                                                    TextTrimming="CharacterEllipsis"/>
@@ -786,16 +793,16 @@
                                             <Button x:Name="DeleteButton" Style="{StaticResource GhostButton}"
                                                     Margin="8,0,0,0" Padding="14,9" Click="DeleteEntry_Click">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="#C62828"/>
-                                                    <TextBlock Text="Delete" Foreground="#C62828"/>
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="{DynamicResource DangerBrush}"/>
+                                                    <TextBlock Text="Delete" Foreground="{DynamicResource DangerBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
                                         <TextBlock x:Name="EntryStatusText" VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right" Foreground="#2E7D32"
+                                                   HorizontalAlignment="Right" Foreground="{DynamicResource SuccessBrush}"
                                                    TextWrapping="Wrap" Margin="12,0,0,0"/>
                                     </DockPanel>
-                                    <TextBlock x:Name="EntryInfoText" Foreground="{StaticResource SubtleBrush}" FontSize="11"
+                                    <TextBlock x:Name="EntryInfoText" Foreground="{DynamicResource SubtleBrush}" FontSize="11"
                                                Margin="0,12,0,0"/>
                                 </StackPanel>
                             </ScrollViewer>
