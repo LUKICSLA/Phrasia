@@ -49,6 +49,30 @@
             </DockPanel>
         </Border>
 
+        <!-- ===================== UPDATE BANNER (shown when GitHub has a newer release) ===================== -->
+        <Border x:Name="UpdateBanner" DockPanel.Dock="Top" Visibility="Collapsed" Background="{DynamicResource AccentSoftBrush}"
+                BorderBrush="{DynamicResource AccentLineBrush}" BorderThickness="0,0,0,1" Padding="24,8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="8,5" Margin="6,0,0,0"
+                        VerticalAlignment="Center" Click="UpdateDismiss_Click" ToolTip="Hide until the next start">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="11" Margin="0"/>
+                </Button>
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="10,5" Margin="6,0,0,0"
+                        VerticalAlignment="Center" Content="Skip this version" Click="UpdateSkip_Click"
+                        ToolTip="Do not offer this version again"/>
+                <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Padding="12,5" Margin="12,0,0,0"
+                        VerticalAlignment="Center" Click="UpdateDownload_Click" ToolTip="Open the release page on GitHub">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="12" Margin="0,0,6,0"/>
+                        <TextBlock Text="Download"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Foreground="{DynamicResource AccentBrush}"/>
+                <TextBlock x:Name="UpdateText" VerticalAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AccentDarkBrush}"/>
+            </DockPanel>
+        </Border>
+
         <!-- ===================== FOOTER ===================== -->
         <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0"
                 Background="{DynamicResource SurfaceBrush}" Padding="24,8">
@@ -90,12 +114,16 @@
                         <TextBlock Text="Support on Ko-fi"/>
                     </StackPanel>
                 </Button>
+                <CheckBox x:Name="UpdateCheckBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0"
+                          FontSize="12" Content="Check for updates"
+                          ToolTip="At startup, ask GitHub whether a newer Phrasia exists. Only the app version is sent – nothing about you or your vault. Nothing is downloaded automatically."
+                          Checked="UpdateCheck_Changed" Unchecked="UpdateCheck_Changed"/>
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="16" VerticalAlignment="Center"
                            Foreground="{DynamicResource PrivacyIconBrush}"/>
                 <TextBlock VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"
                            Foreground="{DynamicResource PrivacyTextBrush}" FontSize="12.5">
-                    <Run Text="Fully offline." FontWeight="Bold"/>
-                    <Run Text="Phrasia never sends your passwords or any data anywhere — no cloud, no tracking, no telemetry, no analytics. Everything stays on this computer, and your vault is encrypted with a key only your master password can unlock."/>
+                    <Run Text="Your data stays offline." FontWeight="Bold"/>
+                    <Run Text="Phrasia never sends your passwords or any personal data anywhere — no cloud, no tracking, no telemetry. Your vault is encrypted with a key only your master password can unlock. The only network request is the optional update check."/>
                 </TextBlock>
             </DockPanel>
         </Border>

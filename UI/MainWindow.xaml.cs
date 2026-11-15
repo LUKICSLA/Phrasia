@@ -176,7 +176,9 @@ public partial class MainWindow : Window
         Log.Info("Main window loaded");
 
         // the last settings (if any) take precedence over the automatic file choice
-        if (InitPresets()) return;
+        bool restored = InitPresets();
+        InitUpdateCheck();
+        if (restored) return;
 
         if (first is not null)
             LangCombo.SelectedItem = first; // triggers Regenerate
