@@ -1,4 +1,4 @@
-![Phrasia – offline passphrase generator and encrypted password vault for Windows](Assets/phrasia-banner.png)
+![Phrasia – offline passphrase generator and encrypted password vault for Windows](Assets/phrasia_banner.png)
 
 Phrasia never sends your passwords or any other data anywhere - no cloud, no accounts, no
 telemetry. Everything stays on your computer.
