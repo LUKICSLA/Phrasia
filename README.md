@@ -8,8 +8,6 @@ telemetry. Everything stays on your computer.
 > Phrasia is a personal project and has **not been independently security-audited**.
 > Use it at your own risk and always keep backups of your vault.
 
-\---
-
 ## Features
 
 **Passphrase generator**
