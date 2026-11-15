@@ -1,0 +1,126 @@
+# ---------------------------------------------------------------
+# Phrasia
+# ---------------------------------------------------------------
+
+## Build output
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]64/
+*.binlog
+[Aa]rtifacts/
+
+## Visual Studio / Rider / VS Code (per-user state)
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.DotSettings.user
+*.cache
+*.VC.db
+*.opendb
+*.ncrunch*
+_ReSharper*/
+*.sln.iml
+
+## Publish profiles: keep the shared *.pubxml, ignore per-user files
+*.pubxml.user
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+## Tests / coverage
+TestResults/
+*.trx
+coverage*.xml
+*.coverage
+
+## OS clutter
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+
+# ---------------------------------------------------------------
+# Phrasia user data
+# ---------------------------------------------------------------
+*.pgv
+*.pgv.*
+*.before-restore
+*.guard
+*.pdk
+*.bak
+device.bin
+device.imp
+presets.dat
+presets.json
+*.log
+[Ll]ogs/
+
+# ---------------------------------------------------------------
+# Secrets & code-signing material – never commit
+# ---------------------------------------------------------------
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+*.cer
+*.crt
+*.jks
+*.keystore
+.env
+.env.*
+*.env
+secrets.json
+*.secrets.json
+appsettings.*.local.json
+*.publishsettings
+
+# ---------------------------------------------------------------
+# Binaries, archives & crash dumps
+# (release builds belong to GitHub Releases, not to the repository)
+# ---------------------------------------------------------------
+*.exe
+*.dll
+*.pdb
+*.msi
+*.msix
+*.zip
+*.7z
+*.rar
+*.dmp
+*.mdmp
+## Diagnostic traces and memory snapshots can contain decrypted secrets
+*.etl
+*.nettrace
+*.gcdump
+*.diagsession
+*.speedscope.json
+
+## Temp files / merge leftovers
+_to_delete/
+*.lnk
+*.tmp
+*.orig
+*.rej
+*.swp
+~$*
+
+## Personal word lists dropped into Wordlists/ (only its README belongs to the repo)
+Wordlists/*
+!Wordlists/README.md
+
+## Local launch profiles can contain machine-specific paths
+**/Properties/launchSettings.json

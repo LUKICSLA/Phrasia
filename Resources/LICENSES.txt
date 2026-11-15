@@ -1,0 +1,162 @@
+Phrasia – third-party notices
+=============================
+
+Phrasia is Copyright (C) 2026 Lukáš "LUKI" Maár and is free software, licensed
+under the GNU General Public License, version 3 (GPL-3.0). The full license text
+is in the LICENSE file in the root of the source repository.
+Phrasia comes with ABSOLUTELY NO WARRANTY.
+
+The components and word lists below are third-party works that are bundled with
+Phrasia. Each remains under its own license, reproduced or referenced here.
+
+
+Konscious.Security.Cryptography.Argon2 (Argon2id key derivation)
+  https://github.com/kmaragon/Konscious.Security.Cryptography
+  License: MIT (full text below)
+
+  MIT License
+
+  Copyright (c) 2017 Keef Aragon
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+Konscious.Security.Cryptography.Blake2 (BLAKE2b, dependency of the Argon2 package)
+  https://github.com/kmaragon/Konscious.Security.Cryptography
+  License: MIT – same repository, author and license text as
+  Konscious.Security.Cryptography.Argon2 above.
+
+NLog (logging)
+  https://nlog-project.org
+  License: BSD 3-Clause (full text below)
+
+  Copyright (c) 2004-2024 Jaroslaw Kowalski <jaak@jkowalski.net>, Kim Christensen, Julian Verdurmen
+
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+  * Neither the name of Jaroslaw Kowalski nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  THE POSSIBILITY OF SUCH DAMAGE.
+
+
+en_eff.txt
+  EFF Large Wordlist for Passphrases
+  (c) Electronic Frontier Foundation, https://www.eff.org/dice
+  License: Creative Commons Attribution 3.0 United States (CC BY 3.0 US)
+  https://creativecommons.org/licenses/by/3.0/us/
+  Modification: 4 hyphenated words removed (drop-down, felt-tip, t-shirt, yo-yo).
+
+sk_common.txt
+  Derived from slovak-wordlist by Daniel Husar
+  https://github.com/danielhusar/slovak-wordlist
+  Modification: lowercase words with frequency >= 50, length 3-12, sorted by frequency.
+  License: MIT (full text below)
+
+  The MIT License (MIT)
+
+  Copyright (c) Daniel Husar <dano.husar@gmail.com> (https://github.com/danielhusar)
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+
+cs_words.txt.gz
+  Czech word frequency list: FrequencyWords, (c) 2016 Hermit Dave
+  https://github.com/hermitdave/FrequencyWords (data from OpenSubtitles 2018)
+  Data license: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/
+  Modification: lowercase words only, frequency >= 5, length 3-12, validated
+  against the cs_CZ spelling dictionary from LibreOffice; sorted by frequency.
+  The modified list is distributed under the same CC BY-SA 4.0 license.
+
+
+System.Security.Cryptography.ProtectedData (Windows DPAPI)
+Microsoft.Win32.SystemEvents (Windows lock / sleep notifications)
+System.Memory (dependency of the Argon2 package)
+.NET runtime and WPF (bundled in the self-contained, single-file build)
+  https://github.com/dotnet/runtime
+  https://github.com/dotnet/wpf
+  License: MIT (full text below). The .NET runtime itself contains further
+  third-party components, listed in its THIRD-PARTY-NOTICES file:
+  https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT
+
+  The MIT License (MIT)
+
+  Copyright (c) .NET Foundation and Contributors
+
+  All rights reserved.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+
+Build-time only (not included in Phrasia)
+  The LibreOffice cs_CZ spelling dictionary was used only to validate the Czech
+  word list above; no part of it is distributed with Phrasia.

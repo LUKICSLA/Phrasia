@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Phrasia ResourcePacker: regenerates the encrypted embedded word lists (Resources/r_*.bin)
+    from their plain sources, using the same code the app uses to read them.
+    Usage is described in the README ("Regenerating the embedded word lists").
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Core\Crypto\ResourceProtection.cs" Link="ResourceProtection.cs" />
+  </ItemGroup>
+</Project>

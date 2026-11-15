@@ -1,0 +1,808 @@
+<Window x:Class="Phrasia.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Phrasia" Width="1000" Height="760" MinWidth="880" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource WindowBrush}"
+        Icon="pack://application:,,,/Assets/phrasia-96.png"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        Foreground="{StaticResource TextBrush}"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display"
+        Loaded="Window_Loaded" Closing="Window_Closing"
+        PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseDown="Window_PreviewMouseDown">
+
+    <DockPanel>
+
+        <!-- ===================== HEADER ===================== -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="24,14">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                        Click="GitHub_Click" ToolTip="https://github.com/LUKICSLA">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE71B;"/>
+                        <TextBlock Text="GitHub"/>
+                    </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="pack://application:,,,/Assets/phrasia-96.png" Width="40" Height="40"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Phrasia" FontSize="20" FontWeight="Bold"/>
+                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="6" Padding="7,1"
+                                    Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="HeaderVersionText" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{StaticResource AccentDarkBrush}"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Strong passphrases · encrypted vault" Style="{StaticResource HintText}"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===================== FOOTER ===================== -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                Background="{StaticResource SurfaceBrush}" Padding="24,8">
+            <DockPanel>
+                <TextBlock x:Name="VersionText" DockPanel.Dock="Right" Foreground="{StaticResource AccentBrush}"
+                           FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                <CheckBox x:Name="CaptureProtectionCheck" DockPanel.Dock="Right" IsChecked="True"
+                          FontSize="12" Margin="0,0,22,0" VerticalAlignment="Center"
+                          Content="Hide from screen capture"
+                          ToolTip="Screenshots, screen recording and screen sharing show a black window instead of your passwords"
+                          Checked="CaptureProtection_Changed" Unchecked="CaptureProtection_Changed"/>
+                <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <Hyperlink Click="OpenLogs_Click" Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}"
+                               ToolTip="View decrypted local logs (encrypted on disk, never contain passwords)">Logs</Hyperlink>
+                </TextBlock>
+                <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <Hyperlink Click="OpenAbout_Click" Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}"
+                               ToolTip="Version, license (GPL-3.0), source code and third-party notices">About &amp; licenses</Hyperlink>
+                </TextBlock>
+                <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <Hyperlink NavigateUri="https://github.com/LUKICSLA" RequestNavigate="GitHub_RequestNavigate"
+                               Foreground="{StaticResource MutedBrush}" TextDecorations="{x:Null}">
+                        github.com/LUKICSLA
+                    </Hyperlink>
+                </TextBlock>
+                <TextBlock x:Name="AuthorText" Foreground="{StaticResource SubtleBrush}" FontSize="12"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ===================== PRIVACY BANNER ===================== -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource PrivacyBrush}"
+                BorderBrush="{StaticResource PrivacyLineBrush}" BorderThickness="0,0,0,1" Padding="24,9">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                        Margin="12,0,0,0" Click="KoFi_Click" ToolTip="https://ko-fi.com/lukicsla">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xEB51;" Foreground="{StaticResource KoFiBrush}"/>
+                        <TextBlock Text="Support on Ko-fi"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="16" VerticalAlignment="Center"
+                           Foreground="{StaticResource PrivacyIconBrush}"/>
+                <TextBlock VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"
+                           Foreground="{StaticResource PrivacyTextBrush}" FontSize="12.5">
+                    <Run Text="Fully offline." FontWeight="Bold"/>
+                    <Run Text="Phrasia never sends your passwords or any data anywhere — no cloud, no tracking, no telemetry, no analytics. Everything stays on this computer, and your vault is encrypted with a key only your master password can unlock."/>
+                </TextBlock>
+            </DockPanel>
+        </Border>
+
+        <TabControl x:Name="MainTabs" Margin="24,18,24,18">
+
+            <!-- ===================== GENERATOR ===================== -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8D7;"/>
+                        <TextBlock Text="Generator"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="340"/>
+                        <ColumnDefinition Width="18"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Settings -->
+                    <Border Style="{StaticResource Card}" Padding="20,18,8,18">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Settings" Style="{StaticResource CardTitle}"/>
+
+                                <!-- Recommended mode -->
+                                <Border x:Name="RecommendedCard" Background="{StaticResource AccentSoftBrush}"
+                                        BorderBrush="#E0D8FF" BorderThickness="1" CornerRadius="10"
+                                        Padding="14,12" Margin="0,14,0,0">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE735;"
+                                                       Foreground="{StaticResource AccentBrush}" FontSize="16"/>
+                                            <CheckBox x:Name="RecommendedCheck" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                                      ToolTip="Turn on recommended settings"
+                                                      Checked="Recommended_Changed" Unchecked="Recommended_Changed"/>
+                                            <TextBlock Text="Recommended mode" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <TextBlock x:Name="RecommendedHint" Style="{StaticResource HintText}" FontSize="12"
+                                                   Margin="0,6,0,0"
+                                                   Text="Strongest settings with one click: the largest word list, enough words for 100+ bits, everything locked."/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- PRESETS -->
+                                <TextBlock Text="PRESETS" Style="{StaticResource SectionLabel}"/>
+                                <DockPanel Margin="0,0,0,0">
+                                    <Button x:Name="DeletePresetButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                                            Padding="9,7" Margin="6,6,0,0" Click="DeletePreset_Click" ToolTip="Delete the selected preset">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Margin="0"/>
+                                    </Button>
+                                    <Button x:Name="SavePresetButton" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                            Padding="10,7" Margin="6,6,0,0" Click="SavePreset_Click"
+                                            ToolTip="Save the current generator settings under a name">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" FontSize="12" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Save"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <ComboBox x:Name="PresetCombo" SelectionChanged="PresetCombo_SelectionChanged"
+                                              ToolTip="Load saved settings"/>
+                                </DockPanel>
+                                <TextBlock x:Name="PresetHint" Style="{StaticResource HintText}" FontSize="11" Margin="2,4,0,0"/>
+
+                                <!-- WORDS -->
+                                <TextBlock Text="WORDS" Style="{StaticResource SectionLabel}"/>
+
+                                <DockPanel Style="{StaticResource Row}">
+                                    <TextBlock Style="{StaticResource ValueLabel}"
+                                               Text="{Binding Value, ElementName=WordsSlider, StringFormat={}{0:0}}"/>
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Number of words"/>
+                                </DockPanel>
+                                <Slider x:Name="WordsSlider" Minimum="1" Maximum="12" Value="4"
+                                        ValueChanged="Option_Changed"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Word list" Margin="0,14,0,0"/>
+                                <ComboBox x:Name="LangCombo" SelectionChanged="Option_Changed">
+                                    <ComboBoxItem Tag="sk-large" IsSelected="True">Slovak – large (~36,000 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="en-large">English – EFF (~7,800 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="cs-common">Czech – common (~90,000 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="cs-all">Czech – maximum (~250,000 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="mix-large">Slovak + English (~40,000 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="each-sk-cs-en">SK + CZ + EN – one of each in every password</ComboBoxItem>
+                                    <ComboBoxItem Tag="all-large">SK + CZ + EN – one big pool (~290,000 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="sk">Slovak – small (~230 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="en">English – small (~220 words)</ComboBoxItem>
+                                    <ComboBoxItem Tag="mix">Slovak + English – small</ComboBoxItem>
+                                </ComboBox>
+                                <DockPanel Margin="0,8,0,0">
+                                    <Button x:Name="LoadWordlistButton" DockPanel.Dock="Right"
+                                            Style="{StaticResource SecondaryButton}" Padding="10,5"
+                                            Click="LoadWordlist_Click" ToolTip="Load your own word list (.txt or .zip)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" FontSize="12" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Custom…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock x:Name="WordlistLabel" Text=".txt or .zip" Style="{StaticResource HintText}"
+                                               FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                               TextWrapping="NoWrap"/>
+                                </DockPanel>
+
+                                <CheckBox x:Name="NoDiacriticsCheck" Content="Strip diacritics (č → c, á → a)"
+                                          IsChecked="True" Margin="0,14,0,0"
+                                          Checked="Option_Changed" Unchecked="Option_Changed"/>
+                                <CheckBox x:Name="UniqueCheck" Content="No repeated words"
+                                          IsChecked="True" Margin="0,10,0,0"
+                                          Checked="Option_Changed" Unchecked="Option_Changed"/>
+
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <DockPanel Style="{StaticResource Row}">
+                                            <TextBlock Style="{StaticResource ValueLabel}"
+                                                       Text="{Binding Value, ElementName=MinLenSlider, StringFormat={}{0:0}}"/>
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Min. length"/>
+                                        </DockPanel>
+                                        <Slider x:Name="MinLenSlider" Minimum="2" Maximum="10" Value="3"
+                                                ValueChanged="Option_Changed"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <DockPanel Style="{StaticResource Row}">
+                                            <TextBlock Style="{StaticResource ValueLabel}"
+                                                       Text="{Binding Value, ElementName=MaxLenSlider, StringFormat={}{0:0}}"/>
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Max. length"/>
+                                        </DockPanel>
+                                        <Slider x:Name="MaxLenSlider" Minimum="3" Maximum="15" Value="10"
+                                                ValueChanged="Option_Changed"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- FORMAT -->
+                                <TextBlock Text="FORMAT" Style="{StaticResource SectionLabel}"/>
+
+                                <CheckBox x:Name="ExtraRandomCheck" Content="Extra randomness" FontWeight="SemiBold"
+                                          Margin="0,12,0,0" Checked="Option_Changed" Unchecked="Option_Changed"
+                                          ToolTip="Random symbol between words, number before or after a word, and one random character inside a word"/>
+                                <TextBlock Style="{StaticResource HintText}" FontSize="12" Margin="46,2,0,0"
+                                           Text="Random symbols between words, number on a random side and one random character inside a word. Harder to type, harder to crack."/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Letter case" Margin="0,12,0,0"/>
+                                <ComboBox x:Name="CaseCombo" SelectionChanged="Option_Changed">
+                                    <ComboBoxItem Tag="random" IsSelected="True">Random (CAT.dog.Hill)</ComboBoxItem>
+                                    <ComboBoxItem Tag="capitalize">Capitalized (Cat.Dog.Hill)</ComboBoxItem>
+                                    <ComboBoxItem Tag="lower">Lowercase (cat.dog.hill)</ComboBoxItem>
+                                    <ComboBoxItem Tag="upper">Uppercase (CAT.DOG.HILL)</ComboBoxItem>
+                                    <ComboBoxItem Tag="alternate">Alternating (CAT.dog.HILL)</ComboBoxItem>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Word separator" Margin="0,14,0,0"/>
+                                <ComboBox x:Name="SeparatorCombo" SelectionChanged="Option_Changed">
+                                    <ComboBoxItem Tag="period" IsSelected="True">Period  .</ComboBoxItem>
+                                    <ComboBoxItem Tag="hyphen">Hyphen  -</ComboBoxItem>
+                                    <ComboBoxItem Tag="underscore">Underscore  _</ComboBoxItem>
+                                    <ComboBoxItem Tag="comma">Comma  ,</ComboBoxItem>
+                                    <ComboBoxItem Tag="space">Space</ComboBoxItem>
+                                    <ComboBoxItem Tag="none">None</ComboBoxItem>
+                                    <ComboBoxItem Tag="digit">Random digits</ComboBoxItem>
+                                    <ComboBoxItem Tag="symbol">Random symbols</ComboBoxItem>
+                                    <ComboBoxItem Tag="mixed">Digits and symbols</ComboBoxItem>
+                                    <ComboBoxItem Tag="custom">Custom…</ComboBoxItem>
+                                </ComboBox>
+                                <TextBox x:Name="CustomSeparatorBox" Text="+" Visibility="Collapsed"
+                                         FontFamily="{StaticResource MonoFont}"
+                                         ToolTip="Custom separator (can be more than one character)"
+                                         TextChanged="Option_Changed"/>
+                                <StackPanel x:Name="SymbolsPanel" Visibility="Collapsed">
+                                    <TextBlock Text="Allowed symbols" Style="{StaticResource HintText}" Margin="0,8,0,0"/>
+                                    <TextBox x:Name="SymbolsBox" Text="!@#$%^&amp;*-_=+?" TextChanged="Option_Changed"
+                                             FontFamily="{StaticResource MonoFont}"/>
+                                </StackPanel>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Numbers" Margin="0,14,0,0"/>
+                                <ComboBox x:Name="NumbersCombo" SelectionChanged="Option_Changed">
+                                    <ComboBoxItem Tag="one" IsSelected="True">After one random word</ComboBoxItem>
+                                    <ComboBoxItem Tag="each">After every word</ComboBoxItem>
+                                    <ComboBoxItem Tag="end">At the end</ComboBoxItem>
+                                    <ComboBoxItem Tag="none">No numbers</ComboBoxItem>
+                                </ComboBox>
+                                <StackPanel x:Name="DigitsPanel">
+                                    <DockPanel Style="{StaticResource Row}">
+                                        <TextBlock Style="{StaticResource ValueLabel}"
+                                                   Text="{Binding Value, ElementName=DigitsSlider, StringFormat={}{0:0}}"/>
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="Number of digits"/>
+                                    </DockPanel>
+                                    <Slider x:Name="DigitsSlider" Minimum="1" Maximum="6" Value="2"
+                                            ValueChanged="Option_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Result -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="18"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Password + strength -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <CheckBox x:Name="ShowPasswordMainCheck" DockPanel.Dock="Right" Content="Show"
+                                              FontSize="12" VerticalAlignment="Center" Margin="16,0,0,0"
+                                              ToolTip="Show the password in plain text"
+                                              Checked="ShowPasswordMain_Changed" Unchecked="ShowPasswordMain_Changed"/>
+                                    <CheckBox x:Name="HoverRevealCheck" DockPanel.Dock="Right" Content="Reveal on hover"
+                                              FontSize="12" VerticalAlignment="Center" IsChecked="False"
+                                              ToolTip="Show hidden passwords (main and variants) while the mouse is over them"
+                                              Checked="HoverReveal_Changed" Unchecked="HoverReveal_Changed"/>
+                                    <TextBlock Text="GENERATED PASSWORD" Style="{StaticResource SectionLabel}" Margin="0"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <Border x:Name="PasswordBorder" Background="#FAF9FF" BorderBrush="#E4DEFF" BorderThickness="1"
+                                        CornerRadius="10" Padding="18,16" Margin="0,10,0,0" MinHeight="78"
+                                        MouseEnter="PasswordBorder_MouseEnter" MouseLeave="PasswordBorder_MouseLeave"
+                                        ToolTip="Hidden – turn on Show to see it. Copy works anyway (Copy button or Ctrl+C).">
+                                    <TextBlock x:Name="PasswordText" FontFamily="{StaticResource MonoFont}" FontSize="26"
+                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <DockPanel Margin="0,14,0,0">
+                                    <TextBlock x:Name="RatingText" DockPanel.Dock="Right" FontWeight="Bold"/>
+                                    <TextBlock x:Name="EntropyText" Style="{StaticResource HintText}"/>
+                                </DockPanel>
+                                <ProgressBar x:Name="EntropyBar" Margin="0,8,0,0" Minimum="0" Maximum="128"/>
+                                <TextBlock x:Name="RatingQuipText" Style="{StaticResource HintText}" FontStyle="Italic"
+                                           FontSize="12" Margin="0,6,0,0"/>
+                                <DockPanel Margin="0,8,0,0">
+                                    <Button x:Name="CrackTimeButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                                            Padding="10,4" Margin="10,0,0,0" VerticalAlignment="Center" Click="CrackTime_Click"
+                                            ToolTip="How long would it take to crack this password in different attack scenarios">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE916;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Time to crack…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock x:Name="CrackTimeText" Style="{StaticResource HintText}" FontSize="12"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <DockPanel Margin="0,18,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource PrimaryButton}" Click="Generate_Click"
+                                                ToolTip="New password (Enter)">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;"/>
+                                                <TextBlock Text="Generate"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Click="Copy_Click"
+                                                ToolTip="Copy (Ctrl+C) – cleared from the clipboard after 20 s">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;"/>
+                                                <TextBlock Text="Copy"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Click="SaveToVault_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;"/>
+                                                <TextBlock Text="Save to vault"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock x:Name="StatusText" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                               Foreground="#2E7D32" TextWrapping="Wrap" Margin="12,0,0,0"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Variants -->
+                        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="20,18,12,12">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top" Margin="0,0,8,8">
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource ValueLabel}"
+                                               Text="{Binding Value, ElementName=VariantsSlider, StringFormat={}{0:0}}"
+                                               Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="ShowVariantsCheck" DockPanel.Dock="Right" Content="Show" FontSize="12"
+                                              Margin="16,0,0,0" VerticalAlignment="Center"
+                                              ToolTip="Show all variants in plain text"
+                                              Checked="ShowVariants_Changed" Unchecked="ShowVariants_Changed"/>
+                                    <Slider x:Name="VariantsSlider" DockPanel.Dock="Right" Width="150" Margin="0"
+                                            Minimum="0" Maximum="20" Value="6" VerticalAlignment="Center"
+                                            ValueChanged="Option_Changed"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="More variants" Style="{StaticResource CardTitle}"/>
+                                        <TextBlock Text="hidden – use Show to see them, double-click to copy" Style="{StaticResource HintText}" FontSize="12"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <ListBox x:Name="VariantsList" FontFamily="{StaticResource MonoFont}" FontSize="15"
+                                         MouseDoubleClick="Variant_DoubleClick">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <TextBlock x:Name="Plain" Text="{Binding Value}" Visibility="Collapsed"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="Masked" Text="{Binding Mask}"
+                                                           Foreground="{StaticResource SubtleBrush}"/>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <!-- reveal on hover (only when Reveal on hover is enabled) or via the Show toggle -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HoverReveal}" Value="True"/>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="Plain" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Masked" Property="Visibility" Value="Collapsed"/>
+                                                </MultiDataTrigger>
+                                                <DataTrigger Binding="{Binding ShowPlain}" Value="True">
+                                                    <Setter TargetName="Plain" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Masked" Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ===================== VAULT ===================== -->
+            <TabItem x:Name="VaultTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;"/>
+                        <TextBlock Text="Vault"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid>
+                    <!-- Locked vault / create -->
+                    <ScrollViewer x:Name="LockedPanel" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid MinHeight="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <Border Style="{StaticResource Card}" Width="440" Padding="28,26"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,16">
+                        <StackPanel>
+                            <Border Width="56" Height="56" CornerRadius="16" Background="{StaticResource HeroBrush}"
+                                    HorizontalAlignment="Left">
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="24" Foreground="White"
+                                           Margin="0" HorizontalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="LockTitle" FontSize="20" FontWeight="Bold" Margin="0,16,0,0"/>
+                            <TextBlock x:Name="LockHint" Style="{StaticResource HintText}" Margin="0,6,0,0"/>
+
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Master password" Margin="0,20,0,0"/>
+                            <PasswordBox x:Name="MasterBox" PreviewKeyDown="MasterBox_PreviewKeyDown"
+                                         PasswordChanged="MasterBox_PasswordChanged"/>
+                            <StackPanel x:Name="ConfirmPanel">
+                                <TextBlock x:Name="MasterStrengthText" FontSize="11" Margin="0,5,0,0"/>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Confirm master password" Margin="0,12,0,0"/>
+                                <PasswordBox x:Name="MasterConfirmBox" PreviewKeyDown="MasterBox_PreviewKeyDown"/>
+                                <Button Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
+                                        Padding="12,6" Margin="0,12,0,0" Click="SuggestMaster_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE945;"/>
+                                        <TextBlock Text="Suggest a strong password"/>
+                                    </StackPanel>
+                                </Button>
+                                <StackPanel x:Name="SuggestionPanel" Visibility="Collapsed" Margin="0,10,0,0">
+                                    <TextBlock Text="Memorize it (or write it on paper and keep it somewhere safe):"
+                                               Style="{StaticResource HintText}"/>
+                                    <TextBox x:Name="SuggestionBox" IsReadOnly="True" FontFamily="{StaticResource MonoFont}"
+                                             FontSize="15"/>
+                                </StackPanel>
+                                <Border x:Name="DeviceBindNotice" Margin="0,16,0,0" Padding="12,10"
+                                        Background="{StaticResource PrivacyBrush}" BorderBrush="{StaticResource PrivacyLineBrush}"
+                                        BorderThickness="1" CornerRadius="8">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE1A7;" FontSize="13"
+                                                       Foreground="{StaticResource PrivacyIconBrush}"/>
+                                            <TextBlock Text="Bound to this Windows account" FontWeight="SemiBold"
+                                                       Margin="8,0,0,0" Foreground="{StaticResource PrivacyTextBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                                   Text="This vault will open ONLY on this computer and Windows account — not even with the correct password and PIM elsewhere. Right after creating it, use 'Export device key…' and keep that file safe: it (plus your master password) is the only way to move the vault to another PC or recover it after a Windows reinstall."/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PimPanel">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="PIM" Margin="0,14,0,0"/>
+                                <TextBox x:Name="PimBox" MaxLength="3" PreviewTextInput="PimBox_PreviewTextInput"
+                                         PreviewKeyDown="MasterBox_PreviewKeyDown"/>
+                                <TextBlock x:Name="PimHint" Style="{StaticResource HintText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <TextBlock x:Name="LockError" Foreground="#C62828" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="LockoutText" Foreground="#E65100" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <Button x:Name="UnlockButton" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
+                                    Padding="18,11" Click="Unlock_Click"/>
+
+                            <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                                    Margin="0,18,0,0" Padding="0,14,0,0">
+                                <StackPanel>
+                                    <WrapPanel>
+                                        <Button x:Name="RestoreVaultButton" Style="{StaticResource GhostButton}"
+                                                Margin="0,0,8,6" Click="RestoreVault_Click"
+                                                ToolTip="Replaces the vault with a backup (*.pgv). Enter the password the backup is protected with.">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE777;" FontSize="12"/>
+                                                <TextBlock Text="Restore vault from backup…"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button x:Name="RestoreHeaderButton" Style="{StaticResource GhostButton}"
+                                                Margin="0,0,8,6" Click="RestoreHeader_Click"
+                                                ToolTip="Like VeraCrypt: check the vault header against a header backup (*.bak) without changing anything, or restore it when the vault cannot be opened">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE90F;" FontSize="12"/>
+                                                <TextBlock Text="Check / restore header…"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button x:Name="ImportDeviceKeyButton" Style="{StaticResource GhostButton}"
+                                                Margin="0,0,0,6" Click="ImportDeviceKey_Click"
+                                                ToolTip="On a new PC: import the device key you exported, so a device-bound vault can be opened here. Enter the master password first.">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" FontSize="12"/>
+                                                <TextBlock Text="Import device key…"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </WrapPanel>
+                                    <Button x:Name="EraseVaultButton" Style="{StaticResource GhostButton}"
+                                            HorizontalAlignment="Left" Margin="0,2,0,0" Click="EraseVault_Click"
+                                            BorderBrush="#F3C7C7"
+                                            ToolTip="Securely erase the vault and create a new one (all saved passwords will be lost)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Foreground="#C62828"/>
+                                            <TextBlock Text="Forgot password? Erase vault…" Foreground="#C62828"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock x:Name="VaultPathText" Foreground="{StaticResource SubtleBrush}" FontSize="11"
+                                               TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    </Grid>
+                    </ScrollViewer>
+
+                    <!-- Unlocked vault -->
+                    <Grid x:Name="UnlockedPanel" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="320"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- entry list -->
+                        <Border Style="{StaticResource Card}" Padding="16">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="10,6"
+                                            Click="Lock_Click" ToolTip="Lock the vault (Ctrl+L)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="12" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Lock"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Text="Items" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <Grid DockPanel.Dock="Top" Margin="0,10,0,0">
+                                    <TextBox x:Name="SearchBox" Padding="32,7,8,7" TextChanged="Search_TextChanged"
+                                             ToolTip="Search by title, username or website"/>
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE721;" FontSize="13"
+                                               Foreground="{StaticResource SubtleBrush}" Margin="12,6,0,0"
+                                               HorizontalAlignment="Left" IsHitTestVisible="False"/>
+                                </Grid>
+
+                                <TextBlock x:Name="VaultHealthText" DockPanel.Dock="Top" FontSize="12" Margin="2,8,0,0"
+                                           ToolTip="Reused = the same password in more than one item. Weak = estimated strength under 60 bits."/>
+
+                                <Border x:Name="AttentionFilterBar" DockPanel.Dock="Top" Visibility="Collapsed"
+                                        Background="#FFF1E0" CornerRadius="8" Padding="10,6" Margin="0,8,0,0">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="8,3"
+                                                FontSize="12" Click="ClearAttentionFilter_Click" Content="Show all"/>
+                                        <TextBlock x:Name="AttentionFilterText" FontSize="12" Foreground="#E65100"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    </DockPanel>
+                                </Border>
+
+                                <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                                    <UniformGrid Columns="2">
+                                        <Button Style="{StaticResource PrimaryButton}" Margin="0,0,4,0" Click="NewEntry_Click"
+                                                ToolTip="New item (Ctrl+N)">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE710;"/>
+                                                <TextBlock Text="New item"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SecondaryButton}" Margin="4,0,0,0" Click="Analyze_Click"
+                                                ToolTip="Check all saved passwords and get recommended steps">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE9D9;"/>
+                                                <TextBlock Text="Analyze"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </UniformGrid>
+                                    <UniformGrid Columns="2" Margin="0,8,0,0">
+                                        <Button Style="{StaticResource GhostButton}" Margin="0,0,4,0" Click="BackupHeader_Click"
+                                                ToolTip="Encrypted backup of the salt and parameters – for repairing a damaged header">
+                                            <TextBlock Text="Back up header…"/>
+                                        </Button>
+                                        <Button Style="{StaticResource GhostButton}" Margin="4,0,0,0" Click="BackupVault_Click"
+                                                ToolTip="Copy of the whole encrypted vault">
+                                            <TextBlock Text="Back up vault…"/>
+                                        </Button>
+                                    </UniformGrid>
+                                    <Button Style="{StaticResource GhostButton}" Margin="0,8,0,0" Click="ChangeMaster_Click"
+                                            ToolTip="Re-encrypts the vault with a new master password and a fresh salt">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8D7;" FontSize="12"/>
+                                            <TextBlock Text="Change master password…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Margin="0,4,0,0" Click="TuneKdf_Click"
+                                            ToolTip="Benchmarks Argon2id on this computer and re-encrypts the vault with the strongest settings that unlock in the chosen time (1 s by default, up to 10 s)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE9D9;" FontSize="12"/>
+                                            <TextBlock Text="Tune to this PC…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="ExportDeviceKeyButton" Style="{StaticResource GhostButton}" Margin="0,4,0,0" Click="ExportDeviceKey_Click"
+                                            ToolTip="Save the device key (encrypted with your master password) so this device-bound vault can be moved to another PC or recovered after a Windows reinstall">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE105;" FontSize="12"/>
+                                            <TextBlock Text="Export device key…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Margin="0,8,0,0" Click="ImportFromBackup_Click"
+                                            ToolTip="Adds items from a vault backup (*.pgv) to this vault">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8B5;" FontSize="12"/>
+                                            <TextBlock Text="Import items from backup…"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+
+                                <ListBox x:Name="EntriesList" Margin="0,8,0,0"
+                                         SelectionChanged="EntriesList_SelectionChanged">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                            <Setter Property="Padding" Value="8,5"/>
+                                            <Setter Property="Margin" Value="0"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel ToolTip="{Binding StrengthText}">
+                                                <!-- red bar for critical accounts -->
+                                                <Border DockPanel.Dock="Left" Width="3" CornerRadius="2" Margin="0,1,7,1"
+                                                        Background="#E53935"
+                                                        Visibility="{Binding Critical, Converter={StaticResource BoolToVis}}"/>
+
+                                                <!-- right: badges + small strength indicator -->
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FDECEC"
+                                                            Visibility="{Binding Critical, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="CRIT" Style="{StaticResource BadgeTextSmall}" Foreground="#C62828"/>
+                                                    </Border>
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FFF1E0"
+                                                            Visibility="{Binding IsReused, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="REUSED" Style="{StaticResource BadgeTextSmall}" Foreground="#E65100"/>
+                                                    </Border>
+                                                    <Border Style="{StaticResource BadgeSmall}" Background="#FFF8DC"
+                                                            Visibility="{Binding IsWeak, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="WEAK" Style="{StaticResource BadgeTextSmall}" Foreground="#9A6A00"/>
+                                                    </Border>
+                                                    <ProgressBar Width="34" Height="4" Maximum="128" Margin="7,0,0,0"
+                                                                 VerticalAlignment="Center" Value="{Binding StrengthBits, Mode=OneWay}"
+                                                                 Visibility="{Binding HasPassword, Converter={StaticResource BoolToVis}}">
+                                                        <ProgressBar.Style>
+                                                            <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                                                                <Setter Property="Foreground" Value="#B71C1C"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding StrengthLevel}" Value="1">
+                                                                        <Setter Property="Foreground" Value="#D32F2F"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding StrengthLevel}" Value="2">
+                                                                        <Setter Property="Foreground" Value="#F57C00"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding StrengthLevel}" Value="3">
+                                                                        <Setter Property="Foreground" Value="#388E3C"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding StrengthLevel}" Value="4">
+                                                                        <Setter Property="Foreground" Value="#1B5E20"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding StrengthLevel}" Value="5">
+                                                                        <Setter Property="Foreground" Value="#6D4AFF"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </ProgressBar.Style>
+                                                    </ProgressBar>
+                                                </StackPanel>
+
+                                                <!-- title + username on one line -->
+                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                    <Run Text="{Binding UsernameSuffix, Mode=OneWay}" FontSize="11"
+                                                         Foreground="{StaticResource MutedBrush}"/>
+                                                </TextBlock>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- entry editor -->
+                        <Border Grid.Column="2" Style="{StaticResource Card}" Padding="24,20,12,20">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="#FDECEC"
+                                                Padding="8,3" Visibility="{Binding IsChecked, ElementName=CriticalCheck, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="CRITICAL" Style="{StaticResource BadgeText}" FontSize="11" Foreground="#C62828"/>
+                                        </Border>
+                                        <TextBlock x:Name="EditorTitle" FontSize="19" FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Title" Margin="0,16,0,0"/>
+                                    <TextBox x:Name="TitleBox"/>
+
+                                    <CheckBox x:Name="CriticalCheck" Margin="0,12,0,0"
+                                              Content="Critical account (e-mail, banking, work, password manager…)"
+                                              ToolTip="Highlighted in the list, shown first, and needs a stronger password (75+ bits)"
+                                              Checked="CriticalCheck_Changed" Unchecked="CriticalCheck_Changed"/>
+
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Username / e-mail" Margin="0,14,0,0"/>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                                Padding="10,7" Margin="8,6,0,0" Click="CopyUser_Click" ToolTip="Copy username">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" Margin="0"/>
+                                        </Button>
+                                        <TextBox x:Name="UserBox"/>
+                                    </DockPanel>
+
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Password" Margin="0,14,0,0"/>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                                Padding="10,7" Margin="8,6,0,0" Click="CopyEntryPassword_Click" ToolTip="Copy password">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" Margin="0"/>
+                                        </Button>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                                Padding="10,7" Margin="8,6,0,0" Click="GenerateEntryPassword_Click"
+                                                ToolTip="Generate using the generator settings">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" Margin="0"/>
+                                        </Button>
+                                        <CheckBox x:Name="ShowPasswordCheck" DockPanel.Dock="Right" Content="Show"
+                                                  VerticalAlignment="Center" Margin="12,6,0,0"
+                                                  Checked="ShowPassword_Changed" Unchecked="ShowPassword_Changed"/>
+                                        <Grid>
+                                            <PasswordBox x:Name="EntryPasswordBox" FontFamily="{StaticResource MonoFont}"
+                                                         PasswordChanged="EntryPasswordBox_PasswordChanged"/>
+                                            <TextBox x:Name="EntryPasswordText" Visibility="Collapsed"
+                                                     FontFamily="{StaticResource MonoFont}"
+                                                     TextChanged="EntryPasswordText_TextChanged"/>
+                                        </Grid>
+                                    </DockPanel>
+
+                                    <TextBlock x:Name="EntryPasswordInfo" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Website (URL)" Margin="0,14,0,0"/>
+                                    <TextBox x:Name="UrlBox"/>
+
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Note" Margin="0,14,0,0"/>
+                                    <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" Height="90"
+                                             VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto"/>
+
+                                    <DockPanel Margin="0,20,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Style="{StaticResource PrimaryButton}" Click="SaveEntry_Click"
+                                                    ToolTip="Save (Ctrl+S). A new item is saved and the next one is prepared right away.">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;"/>
+                                                    <TextBlock Text="Save"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button x:Name="DeleteButton" Style="{StaticResource GhostButton}"
+                                                    Margin="8,0,0,0" Padding="14,9" Click="DeleteEntry_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="#C62828"/>
+                                                    <TextBlock Text="Delete" Foreground="#C62828"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <TextBlock x:Name="EntryStatusText" VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right" Foreground="#2E7D32"
+                                                   TextWrapping="Wrap" Margin="12,0,0,0"/>
+                                    </DockPanel>
+                                    <TextBlock x:Name="EntryInfoText" Foreground="{StaticResource SubtleBrush}" FontSize="11"
+                                               Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
