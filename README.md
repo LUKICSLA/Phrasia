@@ -26,6 +26,7 @@ telemetry. Everything stays on your computer.
 - Secure clipboard that clears itself, auto-lock, optional screen-capture protection
 - Strong master password suggestions and mouse-movement randomness for critical operations
 - Backups, header backups and VeraCrypt-style header check / restore
+- File checksum that reveals when the vault was changed, damaged or replaced outside Phrasia
 
 ## Security in short
 

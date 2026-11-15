@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -227,7 +226,9 @@ public partial class MainWindow
         {
             // key derivation takes ~1 s – off the UI thread so the window does not freeze
             var path = Vault.DefaultPath;
+            var checksum = exists ? Vault.VerifyChecksum(path) : Vault.ChecksumStatus.Missing; // before a possible upgrade rewrites it
             _vault = await Task.Run(() => exists ? Vault.Open(path, pw, pim) : Vault.Create(path, pw, pim));
+            if (exists && checksum != Vault.ChecksumStatus.Unchanged) Vault.WriteChecksum(path); // re-stamp the verified file
 
             _throttle.Reset();
             if (!exists) EntropyPool.MarkConsumed(); // the next critical operation asks for fresh movement
@@ -243,6 +244,16 @@ public partial class MainWindow
             UnlockedPanel.Visibility = Visibility.Visible;
             SearchBox.Text = "";
             RefreshList();
+
+            if (checksum == Vault.ChecksumStatus.Changed)
+            {
+                Log.Warn("Vault file checksum did not match on unlock (file changed outside Phrasia)");
+                AppMessageBox.Show(this,
+                    "The vault opened correctly, but the file is not the one Phrasia last saved.\n\n" +
+                    "Someone or something changed it outside Phrasia – for example an older copy was put back. " +
+                    "If you did not do that yourself, check that your entries are complete and up to date.",
+                    "Vault file changed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
             if (_pendingPassword is not null)
             {
@@ -1072,6 +1083,12 @@ public partial class MainWindow
         {
             "✓ The header backup opens with this password.",
             $"     Backup: format v{r.BackupFormat} · {r.BackupKdf}{(r.BackupDeviceBound ? " · device-bound" : "")}",
+            r.Checksum switch
+            {
+                Vault.ChecksumStatus.Unchanged => "✓ The vault file is unchanged since Phrasia last saved it (checksum matches).",
+                Vault.ChecksumStatus.Changed => "✗ The vault file was changed outside Phrasia since it was last saved (checksum does not match).",
+                _ => "• No checksum to compare yet – it is created the next time Phrasia saves or unlocks the vault."
+            },
             r.VaultOpens
                 ? $"✓ The vault opens with its current header (format v{r.VaultFormat})."
                 : "✗ The vault does not open with its current header and this password / PIM.",
@@ -1081,7 +1098,11 @@ public partial class MainWindow
             "",
             r.NeedsDeviceKey ? "Result: the vault is bound to another computer / Windows account. Import the device key first (\"Import device key…\"), then check again."
             : r.VaultTooDamaged ? "Result: the vault file is too badly damaged for a header repair – use \"Restore vault from backup…\"."
+            : r.VaultOpens && r.Checksum == Vault.ChecksumStatus.Changed
+                ? "Result: the vault opens, but it is not the file Phrasia last saved – an older or different copy may have been put in its place. If you did not do that yourself, check your entries."
             : r.VaultOpens ? "Result: the header is fine – nothing to repair, restoring is not needed."
+            : !r.BackupRepairsVault && r.HeaderMatchesBackup && r.Checksum == Vault.ChecksumStatus.Changed
+                ? "Result: the vault data itself was modified or damaged after Phrasia last saved it – a header restore cannot fix that. Use \"Restore vault from backup…\"."
             : r.BackupRepairsVault ? "Result: restoring the header from this backup WILL make the vault open again → \"Restore header…\"."
             : "Result: restoring from this backup would not help. Check the PIM; otherwise the backup belongs to a different vault or the vault content itself is damaged (then use \"Restore vault from backup…\")."
         };
