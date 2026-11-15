@@ -18,9 +18,9 @@ internal sealed class AnalysisReportDialog : Window
     /// <summary>Resolves a style resource by key.</summary>
     private static Style S(string key) => (Style)Application.Current.Resources[key];
 
-    private static readonly Brush Red = Freeze(Color.FromRgb(0xC6, 0x28, 0x28));
-    private static readonly Brush Orange = Freeze(Color.FromRgb(0xE6, 0x51, 0x00));
-    private static readonly Brush Green = Freeze(Color.FromRgb(0x2E, 0x7D, 0x32));
+    private static Brush Red => R("DangerBrush");
+    private static Brush Orange => R("WarningBrush");
+    private static Brush Green => R("SuccessBrush");
 
     /// <summary>Builds the report UI from a completed analysis and wires the recommended-action buttons.</summary>
     public AnalysisReportDialog(Window owner, VaultAnalysis a)
@@ -40,7 +40,7 @@ internal sealed class AnalysisReportDialog : Window
         var root = new StackPanel { Margin = new Thickness(24, 22, 24, 22) };
 
         // ----- score -----
-        var scoreBrush = a.Score >= 90 ? Green : a.Score >= 75 ? Freeze(Color.FromRgb(0x38, 0x8E, 0x3C))
+        var scoreBrush = a.Score >= 90 ? Green : a.Score >= 75 ? R("Strength3Brush")
                        : a.Score >= 50 ? Orange : Red;
         var header = new DockPanel();
         var scoreBox = new Border
@@ -148,7 +148,7 @@ internal sealed class AnalysisReportDialog : Window
         if (!show) return;
         var box = new Border
         {
-            Background = Brushes.White, BorderBrush = R("LineBrush"), BorderThickness = new Thickness(1),
+            Background = R("SurfaceBrush"), BorderBrush = R("LineBrush"), BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10), Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 6, 0, 0)
         };
         var sp = new StackPanel();

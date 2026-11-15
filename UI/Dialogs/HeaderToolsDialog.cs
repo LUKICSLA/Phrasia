@@ -166,7 +166,7 @@ internal sealed class HeaderToolsDialog : Window
     private void ShowResult(string text, bool isError)
     {
         _result.Text = text;
-        _result.Foreground = isError ? new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)) : Foreground;
+        _result.Foreground = isError ? ThemeManager.Brush("DangerBrush") : Foreground;
         _resultBox.Visibility = Visibility.Visible;
     }
 }

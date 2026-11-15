@@ -591,6 +591,7 @@ public sealed class Vault : IDisposable
         var tmp = FilePath + ".tmp";
         File.WriteAllBytes(tmp, output);
         File.Move(tmp, FilePath, overwrite: true);
+        WriteChecksum(FilePath, output);
     }
 
     /// <summary>Verifies the password belongs to this (unlocked) vault – constant-time comparison. Throws <see cref="ObjectDisposedException"/> if the vault is (or gets) locked meanwhile.</summary>
@@ -880,6 +881,7 @@ public sealed class Vault : IDisposable
         var tmp = vaultPath + ".tmp";
         File.WriteAllBytes(tmp, repaired);
         File.Move(tmp, vaultPath, overwrite: true);
+        WriteChecksum(vaultPath, repaired);
     }
 
     /// <summary>Result of a read-only header check (see <see cref="CheckHeader"/>).</summary>
@@ -892,13 +894,15 @@ public sealed class Vault : IDisposable
         bool HeaderMatchesBackup,
         bool VaultOpens,
         int? VaultFormat,
-        bool BackupRepairsVault);
+        bool BackupRepairsVault,
+        ChecksumStatus Checksum);
 
     /// <summary>VeraCrypt-style header check that changes nothing: verifies the backup opens with the password, whether the vault opens with its current header, whether that header is identical to the backup, and whether restoring from the backup would make the vault open. Throws <see cref="WrongPasswordException"/> when the backup does not open with the password.</summary>
     public static HeaderCheckReport CheckHeader(string vaultPath, string backupPath, string masterPassword, int pim = 0)
     {
         var b = ReadHeaderBackup(backupPath, masterPassword);
         var vault = File.ReadAllBytes(vaultPath);
+        var checksum = VerifyChecksum(vaultPath, vault);
         bool needsDeviceKey = b.DeviceBound && DeviceKeyStore.Current() is null;
 
         byte[]? repaired = null;
@@ -925,7 +929,7 @@ public sealed class Vault : IDisposable
         }
 
         return new HeaderCheckReport((int)b.HeaderFormat, DescribeKdf(b.HeaderFormat, b.Params), b.DeviceBound,
-            needsDeviceKey, repaired is null, matches, opens, openedFormat, repairs);
+            needsDeviceKey, repaired is null, matches, opens, openedFormat, repairs, checksum);
     }
 
     /// <summary>Human-readable key derivation of a format (as stored in a header backup); the PIM is not shown.</summary>
@@ -938,13 +942,95 @@ public sealed class Vault : IDisposable
         _ => "PBKDF2-HMAC-SHA256, 2,000,000 iterations"
     };
 
+    // ---------------- file checksum: detects changes made outside Phrasia ----------------
+    // After every write Phrasia stores HMAC-SHA256(device key, whole vault file) in *.sum. The vault itself is
+    // authenticated by AES-GCM/ChaCha20-Poly1305 (any change makes it fail to open), but that needs the password;
+    // the checksum also tells that the file was edited, damaged or replaced (e.g. by an older copy) since Phrasia
+    // last saved it. Keyed with the device secret, so it cannot simply be recomputed by someone else.
+
+    /// <summary>Result of comparing the vault file with the checksum stored when Phrasia last saved it.</summary>
+    public enum ChecksumStatus
+    {
+        /// <summary>The file is exactly what Phrasia last saved.</summary>
+        Unchanged,
+        /// <summary>The file was changed, damaged or replaced outside Phrasia.</summary>
+        Changed,
+        /// <summary>No checksum yet (older version, first run) or it cannot be verified on this computer.</summary>
+        Missing
+    }
+
+    private static readonly byte[] ChecksumMagic = "PHRSUM1\0"u8.ToArray();
+    private static readonly byte[] ChecksumInfo = "Phrasia vault file checksum v1"u8.ToArray();
+    private const byte ChecksumPlain = 0, ChecksumKeyed = 1;
+
+    /// <summary>Path of the checksum file next to the vault.</summary>
+    public static string ChecksumPath(string vaultPath) => vaultPath + ".sum";
+
+    /// <summary>Stores the checksum of the vault file (read from disk when <paramref name="content"/> is null). Never throws –
+    /// a missing checksum only means the next check reports "no checksum yet".</summary>
+    public static void WriteChecksum(string vaultPath, byte[]? content = null)
+    {
+        try
+        {
+            content ??= File.ReadAllBytes(vaultPath);
+            var mac = ComputeChecksum(content, out byte mode);
+            var data = new byte[ChecksumMagic.Length + 1 + mac.Length];
+            ChecksumMagic.CopyTo(data, 0);
+            data[ChecksumMagic.Length] = mode;
+            mac.CopyTo(data, ChecksumMagic.Length + 1);
+            File.WriteAllBytes(ChecksumPath(vaultPath), data);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or CryptographicException) { }
+    }
+
+    /// <summary>Compares the vault file (read from disk when <paramref name="content"/> is null) with its stored checksum.</summary>
+    public static ChecksumStatus VerifyChecksum(string vaultPath, byte[]? content = null)
+    {
+        try
+        {
+            var sumPath = ChecksumPath(vaultPath);
+            if (!File.Exists(sumPath) || !File.Exists(vaultPath)) return ChecksumStatus.Missing;
+            var data = File.ReadAllBytes(sumPath);
+            int macOffset = ChecksumMagic.Length + 1;
+            if (data.Length != macOffset + 32 || !data.AsSpan(0, ChecksumMagic.Length).SequenceEqual(ChecksumMagic))
+                return ChecksumStatus.Changed; // the checksum file itself was damaged or replaced
+            content ??= File.ReadAllBytes(vaultPath);
+            var mac = ComputeChecksum(content, out byte mode);
+            if (mode != data[ChecksumMagic.Length])
+                return ChecksumStatus.Missing; // made with/without the device key – cannot be compared here
+            return CryptographicOperations.FixedTimeEquals(mac, data.AsSpan(macOffset))
+                ? ChecksumStatus.Unchanged
+                : ChecksumStatus.Changed;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or CryptographicException)
+        {
+            return ChecksumStatus.Missing;
+        }
+    }
+
+    /// <summary>HMAC-SHA256 keyed by the device secret (via HKDF), or plain SHA-256 where no device secret exists.</summary>
+    private static byte[] ComputeChecksum(ReadOnlySpan<byte> content, out byte mode)
+    {
+        var device = DeviceKeyStore.Current();
+        if (device is null)
+        {
+            mode = ChecksumPlain;
+            return SHA256.HashData(content);
+        }
+        mode = ChecksumKeyed;
+        var key = new byte[32];
+        HKDF.DeriveKey(HashAlgorithmName.SHA256, device, key, Array.Empty<byte>(), ChecksumInfo);
+        try { return HMACSHA256.HashData(key, content); }
+        finally { CryptographicOperations.ZeroMemory(key); }
+    }
+
     // ---------------- secure delete ----------------
 
     /// <summary>Securely erases the vault and its working files (*.tmp, *.before-restore): content is overwritten twice with random data (flushed to disk), truncated to 0 B, renamed to a random name, then deleted. Returns the number of deleted files.</summary>
     public static int SecureDelete(string vaultPath)
     {
         int count = 0;
-        foreach (var file in new[] { vaultPath, vaultPath + ".tmp", vaultPath + ".before-restore" })
+        foreach (var file in new[] { vaultPath, vaultPath + ".tmp", vaultPath + ".before-restore", ChecksumPath(vaultPath) })
         {
             if (!File.Exists(file)) continue;
             SecureDeleteFile(file);
@@ -1022,6 +1108,7 @@ public sealed class Vault : IDisposable
         var tmp = vaultPath + ".tmp";
         File.Copy(backupPath, tmp, overwrite: true);
         File.Move(tmp, vaultPath, overwrite: true);
+        WriteChecksum(vaultPath);
     }
 
     /// <summary>Merges entries (e.g. from a backup) into the vault. An entry with the same Id is overwritten only if the backup's is newer. Does not save – the caller calls Save().</summary>

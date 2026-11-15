@@ -28,6 +28,9 @@ public partial class App : Application
             args.SetObserved();
         };
 
+        ThemeManager.Apply(ThemeManager.Parse(PresetStore.Load().Theme)); // before the main window is created
+        Log.Info("Theme: {Mode} ({Palette})", ThemeManager.Mode, ThemeManager.IsDark ? "dark" : "light");
+
         base.OnStartup(e);
     }
 
