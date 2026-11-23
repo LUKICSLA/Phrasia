@@ -472,9 +472,9 @@ public partial class MainWindow
     }
 
     /// <summary>Exports the device key (master-password-encrypted) for migration/recovery.</summary>
-    private void ExportDeviceKey_Click(object sender, RoutedEventArgs e)
+    private async void ExportDeviceKey_Click(object sender, RoutedEventArgs e)
     {
-        if (_vault is null || !_vault.IsDeviceBound) return;
+        if (_vault is null || !_vault.IsDeviceBound || IsVaultBusy) return;
         var dlg = new SaveFileDialog
         {
             Title = "Export device key",
@@ -487,12 +487,28 @@ public partial class MainWindow
         if (prompt.ShowDialog() != true) return;
         if (!EntropyDialog.EnsureFresh(this, "the protection (salt and nonce) of the exported device key")) return;
 
+        var vault = _vault;
+        if (vault is null) return; // the vault may have auto-locked in the meantime
+        string pw = prompt.Password, path = dlg.FileName;
+        ShowEntryStatus("Verifying the password and exporting the device key…");
         try
         {
-            DeviceKeyStore.ExportRecovery(dlg.FileName, prompt.Password);
+            await RunVaultOperationAsync(() => vault.ExportDeviceKey(path, pw));
             EntropyPool.MarkConsumed();
             Log.Info("Device key exported");
-            ShowEntryStatus("Device key exported ✓ — keep it safe; it plus your password can move the vault to another PC.");
+            ShowEntryStatus("Device key exported ✓ — keep it safe; it plus your password and PIM can move the vault to another PC.");
+        }
+        catch (WrongPasswordException)
+        {
+            _throttle.RegisterFailure();
+            if (_throttle.RemainingLockout > TimeSpan.Zero)
+                LockVault("Wrong master password during the device-key export – the vault was locked.");
+            else
+                ShowEntryStatus("Wrong master password – the device key was not exported.", error: true);
+        }
+        catch (ObjectDisposedException)
+        {
+            ShowEntryStatus("The vault was locked before the device key was exported.", error: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -507,10 +523,11 @@ public partial class MainWindow
         string pw = MasterBox.Password;
         if (pw.Length == 0)
         {
-            LockError.Text = "First enter the master password used when the device key was exported, then choose the file.";
+            LockError.Text = "First enter the master password and PIM used when the device key was exported, then choose the file.";
             MasterBox.Focus();
             return;
         }
+        if (!TryReadUnlockPim(mandatory: false, out int pim)) return;
         var dlg = new OpenFileDialog
         {
             Title = "Import device key",
@@ -522,13 +539,13 @@ public partial class MainWindow
         LockError.Text = "Importing device key…";
         try
         {
-            await Task.Run(() => DeviceKeyStore.ImportRecovery(path, pw));
+            await Task.Run(() => DeviceKeyStore.ImportRecovery(path, pw, pim));
             Log.Info("Device key imported");
             LockError.Text = "Device key imported. You can now unlock a vault bound on the original PC.";
         }
         catch (WrongPasswordException)
         {
-            LockError.Text = "Wrong master password for this device-key file.";
+            LockError.Text = "Wrong master password or PIM for this device-key file.";
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
@@ -1041,7 +1058,7 @@ public partial class MainWindow
         catch (WrongPasswordException)
         {
             _throttle.RegisterFailure();
-            ShowLocked("Wrong master password for this backup.");
+            ShowLocked("Wrong master password or PIM for this header backup.");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -1067,7 +1084,7 @@ public partial class MainWindow
         {
             _throttle.RegisterFailure();
             var wait = _throttle.RemainingLockout;
-            return "✗ This header backup does not open with this master password (or the file is not a Phrasia header backup)." +
+            return "✗ This header backup does not open with this master password and PIM (or the file is not a Phrasia header backup)." +
                    (wait > TimeSpan.Zero ? $"\n\nToo many wrong attempts – next attempt in {FormatRemaining(wait)}." : "");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)

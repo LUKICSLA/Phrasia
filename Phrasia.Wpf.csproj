@@ -8,10 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Phrasia</RootNamespace>
     <!-- helper tools (e.g. tools/ResourcePacker) are separate projects, not part of the app -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);tools\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tools\**;_to_delete\**</DefaultItemExcludes>
     <AssemblyName>Phrasia</AssemblyName>
     <ApplicationIcon>Assets\phrasia.ico</ApplicationIcon>
-    <Version>1.21.0</Version>
+    <Version>1.22.0</Version>
     <Product>Phrasia</Product>
     <Authors>Lukáš "LUKI" Maár</Authors>
     <Company>Lukáš "LUKI" Maár</Company>

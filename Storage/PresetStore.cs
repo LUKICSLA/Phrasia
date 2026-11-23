@@ -42,6 +42,12 @@ public sealed class PresetFile
     /// <summary>Reveal masked passwords on hover (off by default).</summary>
     public bool HoverReveal { get; set; }
 
+    /// <summary>Ask GitHub at startup whether a newer release exists (on by default).</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
+    /// <summary>A release the user chose to skip (e.g. "1.22.0"); it is not offered again.</summary>
+    public string? SkippedVersion { get; set; }
+
     /// <summary>Color theme: "system" (follow Windows), "light" or "dark".</summary>
     public string Theme { get; set; } = "system";
 

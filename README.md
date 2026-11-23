@@ -1,12 +1,15 @@
-![Phrasia – offline passphrase generator and encrypted password vault for Windows](Assets/phrasia_banner.png)
+![Phrasia – offline passphrase generator and encrypted password vault for Windows](Assets/phrasia-banner.png)
 
-Phrasia never sends your passwords or any other data anywhere - no cloud, no accounts, no
-telemetry. Everything stays on your computer.
+Phrasia never sends your passwords or any personal data anywhere — no cloud, no accounts, no
+telemetry. Everything stays on your computer. The only network request is an optional check for
+new versions on GitHub, which you can turn off.
 
 > [!WARNING]
 >
 > Phrasia is a personal project and has **not been independently security-audited**.
 > Use it at your own risk and always keep backups of your vault.
+
+---
 
 ## Features
 
@@ -17,6 +20,10 @@ telemetry. Everything stays on your computer.
 - Strength estimate and "time to crack" for every password
 - Presets, recommended mode, several variants at once
 - Generated passwords are hidden by default
+
+**Updates**
+- Checks GitHub for a newer release at startup and shows a download link (nothing is installed
+  automatically; can be turned off)
 
 **Look & feel**
 
@@ -61,7 +68,7 @@ telemetry. Everything stays on your computer.
 > If you forget your master password or PIM, the vault **cannot be recovered** – there is no
 > back door and no reset.
 
-\---
+---
 
 ## Download
 
@@ -71,17 +78,17 @@ no installation and no .NET runtime needed.
 > [!NOTE]
 >
 > The executable is not code-signed, so Windows SmartScreen may warn about it
-> (\*\*More info → Run anyway\*\*).
+> (**More info → Run anyway**).
 
 > [!TIP]
 >
 > Verify the download by comparing its SHA-256 checksum with the one published in the release:
-> `Get-FileHash .\\Phrasia.exe -Algorithm SHA256`
+> `Get-FileHash .\Phrasia.exe -Algorithm SHA256`
 
 ## Requirements
 
-* Windows 10 (1607+) or Windows 11, x64
-* To build from source: [.NET SDK](https://dotnet.microsoft.com/download) 8.0 or newer
+- Windows 10 (1607+) or Windows 11, x64
+- To build from source: [.NET SDK](https://dotnet.microsoft.com/download) 8.0 or newer
 
 ## Building
 
@@ -94,7 +101,7 @@ dotnet publish Phrasia.Wpf.csproj -c Release -p:PublishProfile=FolderProfile
 > The executable is created in `bin\Release\net8.0-windows\publish\win-x64\Phrasia.exe`.
 > The first build downloads the .NET runtime packs from NuGet, so it needs an internet connection.
 
-\---
+---
 
 ## License
 
@@ -111,4 +118,3 @@ Third-party libraries and word lists are listed with their licenses in
 ## Support
 
 If Phrasia is useful to you, you can support its development on [Ko-fi](https://ko-fi.com/lukicsla). ☕
-

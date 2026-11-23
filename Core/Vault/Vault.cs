@@ -87,8 +87,18 @@ public sealed class Vault : IDisposable
     private const int PaddingBlock = 4096;
 
     private const int HeaderPlainSize = 256;
-    /// <summary>A header backup has a fixed size: [backup salt 32][nonce 12][ciphertext 256][tag 16].</summary>
+    /// <summary>A legacy header backup (v1–v4, read-only for v5/v6/v7 vaults) has a fixed size: [backup salt 32][nonce 12][ciphertext 256][tag 16].</summary>
     public const int HeaderBackupSize = SaltSize + NonceSize + HeaderPlainSize + TagSize;
+
+    // ----- header backup v5 (for v5/v6/v7 vaults) -----
+    // Encrypted with the vault's own Argon2id parameters × PIM, so guessing the master password from a stolen
+    // backup costs as much as from the vault itself. (The older backups used fixed 64 MiB / 3 passes and no PIM –
+    // a cheaper target than the vault.) The parameters are stored masked next to the salt, like in the vault.
+    /// <summary>Size of a v5 header backup: [backup salt 32][params 8 – masked][nonce 12][ciphertext 256][tag 16].</summary>
+    public const int HeaderBackupSizeV5 = SaltSize + ParamsBlockSize + NonceSize + HeaderPlainSize + TagSize;
+    private static readonly byte[] AadHeaderBackupV5 = "Phrasia-header-backup-v5"u8.ToArray();
+    private static readonly byte[] HkdfInfoHeaderBackupV5 = "Phrasia header backup v5 | Argon2id (vault parameters) x PIM"u8.ToArray();
+    private static readonly byte[] BackupParamsMaskLabel = "Phrasia header backup v5 | parameter mask"u8.ToArray();
 
     /// <summary>On-disk vault format versions (higher = newer/stronger).</summary>
     internal enum Format : byte { V2 = 2, V3 = 3, V4 = 4, V5 = 5, V6 = 6, V7 = 7 }
@@ -388,19 +398,20 @@ public sealed class Vault : IDisposable
     }
 
     /// <summary>Mask derived from the salt – the parameters look like random bytes in the file.</summary>
-    private static byte[] ParamsMask(ReadOnlySpan<byte> salt)
+    private static byte[] ParamsMask(ReadOnlySpan<byte> salt, byte[]? label = null)
     {
-        var input = new byte[ParamsMaskLabel.Length + salt.Length];
-        ParamsMaskLabel.CopyTo(input, 0);
-        salt.CopyTo(input.AsSpan(ParamsMaskLabel.Length));
+        label ??= ParamsMaskLabel;
+        var input = new byte[label.Length + salt.Length];
+        label.CopyTo(input, 0);
+        salt.CopyTo(input.AsSpan(label.Length));
         return SHA256.HashData(input)[..ParamsBlockSize];
     }
 
     /// <summary>Returns the params block XOR-masked with a salt-derived mask (so it looks random in the file).</summary>
-    private static byte[] MaskedParams(ReadOnlySpan<byte> salt, Argon2Params p, byte flags)
+    private static byte[] MaskedParams(ReadOnlySpan<byte> salt, Argon2Params p, byte flags, byte[]? label = null)
     {
         var block = RawParams(p, flags);
-        var mask = ParamsMask(salt);
+        var mask = ParamsMask(salt, label);
         for (int i = 0; i < ParamsBlockSize; i++) block[i] ^= mask[i];
         return block;
     }
@@ -586,11 +597,10 @@ public sealed class Vault : IDisposable
         if (FormatHasParams(_format)) MaskedParams(_salt, _params!, flags).CopyTo(output, SaltSize);
         body.CopyTo(output, header);
 
-        // atomic write: a temp file first, then replace – a crash does not corrupt the vault
+        // atomic, durable write: a flushed temp file first, then a write-through replace – neither a crash
+        // nor a power cut leaves an empty or half-written vault
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-        var tmp = FilePath + ".tmp";
-        File.WriteAllBytes(tmp, output);
-        File.Move(tmp, FilePath, overwrite: true);
+        DurableFile.ReplaceAtomically(FilePath, output);
         WriteChecksum(FilePath, output);
     }
 
@@ -636,6 +646,24 @@ public sealed class Vault : IDisposable
         if (bind && DeviceKeyStore.Current() is null)
             throw new InvalidOperationException("Device binding is not available on this computer.");
         ReKey(masterPassword, masterPassword, Format.V7, _params, _pim, bind);
+    }
+
+    /// <summary>Exports the device key of this device-bound vault for migration/recovery. First verifies that
+    /// <paramref name="masterPassword"/> is this vault's password (a typo would otherwise produce an export nobody
+    /// can open), then protects the export with the vault's Argon2id parameters × PIM.</summary>
+    public void ExportDeviceKey(string path, string masterPassword)
+    {
+        if (!VerifyPassword(masterPassword)) throw new WrongPasswordException();
+        Argon2Params p;
+        int pim;
+        lock (_gate)
+        {
+            ThrowIfLocked();
+            if (_format != Format.V7 || !_deviceBound || _params is null)
+                throw new InvalidOperationException("This vault is not bound to this computer.");
+            (p, pim) = (_params, _pim);
+        }
+        DeviceKeyStore.ExportRecovery(path, masterPassword, p, pim);
     }
 
     /// <summary>Sets the calibration target and runs a fresh calibration.</summary>
@@ -695,7 +723,7 @@ public sealed class Vault : IDisposable
 
     // ---------------- header backup ----------------
 
-    /// <summary>Writes an encrypted header backup (format, parameters, salt). Protected by the master password with its own salt; externally it is 316 random bytes. For v5/v6/v7 the backup is encrypted with fixed v4 Argon2id parameters (64 MiB / 3 / 4) so it can be opened without the calibrated parameters.</summary>
+    /// <summary>Writes an encrypted header backup (format, parameters, salt). Protected by the master password with its own salt; externally it looks like random bytes. For v5/v6/v7 vaults (backup v5, 324 B) the key is derived with the vault's own Argon2id parameters × PIM – as costly to attack as the vault itself; v3/v4 vaults keep the legacy 316 B backup.</summary>
     public void ExportHeaderBackup(string backupPath, string masterPassword)
     {
         if (!VerifyPassword(masterPassword)) throw new WrongPasswordException();
@@ -704,10 +732,11 @@ public sealed class Vault : IDisposable
         Argon2Params? p;
         byte[] salt;
         bool bound;
+        int pim;
         lock (_gate)
         {
             ThrowIfLocked();
-            (format, p, salt, bound) = (_format, _params, (byte[])_salt.Clone(), IsDeviceBound);
+            (format, p, salt, bound, pim) = (_format, _params, (byte[])_salt.Clone(), IsDeviceBound, _pim);
         }
 
         var plain = new byte[HeaderPlainSize];
@@ -723,29 +752,52 @@ public sealed class Vault : IDisposable
         }
 
         var backupSalt = EntropyPool.GetBytes(SaltSize); // OS CSPRNG + user entropy
-        // a v5/v6/v7 header backup is encrypted with fixed v4 parameters (no PIM, no binding) – it holds only
-        // the salt and parameters, not vault data; the vault itself still needs the PIM (and device key) after restore.
-        var backupFormat = FormatHasParams(format) ? Format.V4 : format;
-        var backupKey = DeriveKey(backupFormat, masterPassword, backupSalt, null, 0, null);
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
-        var output = new byte[HeaderBackupSize];
+        byte[] output;
+        byte[] backupKey;
+        byte[] aad;
+        int prefix; // bytes before the nonce
+        if (FormatHasParams(format))
+        {
+            // v5 backup: the vault's own Argon2id parameters × PIM (no device binding – the backup must still
+            // open after moving to another PC); the parameters are stored masked and authenticated in the AAD
+            output = new byte[HeaderBackupSizeV5];
+            prefix = SaltSize + ParamsBlockSize;
+            MaskedParams(backupSalt, p!, 0, BackupParamsMaskLabel).CopyTo(output, SaltSize);
+            backupKey = DeriveHeaderBackupKeyV5(masterPassword, backupSalt, p!, pim);
+            aad = HeaderBackupAadV5(p!);
+        }
+        else
+        {
+            output = new byte[HeaderBackupSize];
+            prefix = SaltSize;
+            backupKey = DeriveKey(format, masterPassword, backupSalt, null, 0, null);
+            aad = HeaderBackupAad(format);
+        }
         try
         {
             using var aes = new AesGcm(backupKey, TagSize);
             aes.Encrypt(nonce, plain,
-                output.AsSpan(SaltSize + NonceSize, HeaderPlainSize),
+                output.AsSpan(prefix + NonceSize, HeaderPlainSize),
                 output.AsSpan(output.Length - TagSize),
-                HeaderBackupAad(format));
+                aad);
         }
         finally
         {
             CryptographicOperations.ZeroMemory(plain);
-            CryptographicOperations.ZeroMemory(backupKey);
+            SecureMemory.Wipe(backupKey);
         }
         backupSalt.CopyTo(output, 0);
-        nonce.CopyTo(output, SaltSize);
-        File.WriteAllBytes(backupPath, output);
+        nonce.CopyTo(output, prefix);
+        DurableFile.WriteAllBytes(backupPath, output);
     }
+
+    /// <summary>Key of a v5 header backup: Argon2id with the vault's parameters, passes × PIM (a vault without a PIM counts as PIM 1).</summary>
+    private static byte[] DeriveHeaderBackupKeyV5(string password, byte[] backupSalt, Argon2Params p, int pim) =>
+        DeriveKeyArgon2(password, backupSalt, EffectivePimParams(p, Math.Max(pim, MinPim)), HkdfInfoHeaderBackupV5, KeySize);
+
+    /// <summary>AAD of a v5 header backup: label + the (unmasked) parameters.</summary>
+    private static byte[] HeaderBackupAadV5(Argon2Params p) => AadHeaderBackupV5.Concat(RawParams(p, 0)).ToArray();
 
     /// <summary>The primary KDF parameter stored in a header backup (memory for Argon2, iterations for PBKDF2).</summary>
     private static int FormatParameter(Format f, Argon2Params? p) => f switch
@@ -772,47 +824,16 @@ public sealed class Vault : IDisposable
         public bool DeviceBound => HeaderFormat == Format.V7 && (Flags & FlagDeviceBound) != 0;
     }
 
-    /// <summary>Decrypts a header backup with the master password, trying every supported backup format. Throws <see cref="WrongPasswordException"/> (wrong password or not a header backup) or <see cref="InvalidDataException"/>.</summary>
-    private static HeaderBackupInfo ReadHeaderBackup(string backupPath, string masterPassword)
+    /// <summary>Decrypts a header backup with the master password (and, for a v5 backup, the PIM), trying every supported backup format. Throws <see cref="WrongPasswordException"/> (wrong password/PIM or not a header backup) or <see cref="InvalidDataException"/>.</summary>
+    private static HeaderBackupInfo ReadHeaderBackup(string backupPath, string masterPassword, int pim)
     {
         var backup = File.ReadAllBytes(backupPath);
-        if (backup.Length != HeaderBackupSize)
-            throw new InvalidDataException("The selected file is not a header backup.");
-
-        var backupSalt = backup[..SaltSize];
-        var nonce = backup[SaltSize..(SaltSize + NonceSize)];
-        var cipher = backup[(SaltSize + NonceSize)..^TagSize];
-        var tag = backup[^TagSize..];
-
-        // (backup KDF, AAD) – both v5 and v4 backups use the same key (Argon2id 64 MiB/3/4)
-        byte[]? plain = null;
-        var attempts = new List<(Format Kdf, byte[] Aad)>();
-        if (Argon2Kdf.IsAvailable)
+        var plain = backup.Length switch
         {
-            attempts.Add((Format.V4, AadHeaderBackupV4));
-            attempts.Add((Format.V4, AadHeaderBackupV3));
-        }
-        attempts.Add((Format.V3, AadHeaderBackupV2));
-        attempts.Add((Format.V2, AadHeaderBackupV1));
-
-        byte[]? cachedKey = null;
-        Format cachedKdf = 0;
-        foreach (var (kdf, aad) in attempts)
-        {
-            try
-            {
-                if (cachedKey is null || cachedKdf != kdf)
-                {
-                    cachedKey = DeriveKey(kdf, masterPassword, backupSalt, null, 0, null);
-                    cachedKdf = kdf;
-                }
-                plain = Decrypt((byte[])cachedKey.Clone(), nonce, cipher, tag, aad);
-                break;
-            }
-            catch (WrongPasswordException) { }
-        }
-        if (cachedKey is not null) CryptographicOperations.ZeroMemory(cachedKey);
-        if (plain is null) throw new WrongPasswordException();
+            HeaderBackupSizeV5 => DecryptHeaderBackupV5(backup, masterPassword, pim),
+            HeaderBackupSize => DecryptLegacyHeaderBackup(backup, masterPassword),
+            _ => throw new InvalidDataException("The selected file is not a header backup.")
+        };
 
         try
         {
@@ -837,6 +858,72 @@ public sealed class Vault : IDisposable
         finally
         {
             CryptographicOperations.ZeroMemory(plain);
+        }
+    }
+
+    /// <summary>Decrypts a v5 header backup (vault parameters × PIM). Throws WrongPassword on a wrong password/PIM.</summary>
+    private static byte[] DecryptHeaderBackupV5(byte[] backup, string masterPassword, int pim)
+    {
+        if (!Argon2Kdf.IsAvailable) throw new InvalidDataException("This header backup needs Argon2id, which is not available here.");
+        if (pim > MaxPim) throw new WrongPasswordException();
+
+        var backupSalt = backup[..SaltSize];
+        var mask = ParamsMask(backupSalt, BackupParamsMaskLabel);
+        var block = new byte[ParamsBlockSize];
+        for (int i = 0; i < ParamsBlockSize; i++) block[i] = (byte)(backup[SaltSize + i] ^ mask[i]);
+        var p = new Argon2Params(BinaryPrimitives.ReadInt32LittleEndian(block),
+                                 BinaryPrimitives.ReadUInt16LittleEndian(block.AsSpan(4)), block[6]);
+        if (block[7] != 0 || !p.IsPlausible) throw new InvalidDataException("The selected file is not a header backup.");
+
+        int prefix = SaltSize + ParamsBlockSize;
+        var nonce = backup[prefix..(prefix + NonceSize)];
+        var cipher = backup[(prefix + NonceSize)..^TagSize];
+        var tag = backup[^TagSize..];
+        var key = DeriveHeaderBackupKeyV5(masterPassword, backupSalt, p, pim);
+        try { return Decrypt(key, nonce, cipher, tag, HeaderBackupAadV5(p)); }
+        finally { SecureMemory.Wipe(key); }
+    }
+
+    /// <summary>Decrypts a legacy (316 B) header backup, trying each old backup KDF/AAD.</summary>
+    private static byte[] DecryptLegacyHeaderBackup(byte[] backup, string masterPassword)
+    {
+        var backupSalt = backup[..SaltSize];
+        var nonce = backup[SaltSize..(SaltSize + NonceSize)];
+        var cipher = backup[(SaltSize + NonceSize)..^TagSize];
+        var tag = backup[^TagSize..];
+
+        // (backup KDF, AAD) – the old v5/v6/v7 and v4 backups use the same key (Argon2id 64 MiB/3/4)
+        var attempts = new List<(Format Kdf, byte[] Aad)>();
+        if (Argon2Kdf.IsAvailable)
+        {
+            attempts.Add((Format.V4, AadHeaderBackupV4));
+            attempts.Add((Format.V4, AadHeaderBackupV3));
+        }
+        attempts.Add((Format.V3, AadHeaderBackupV2));
+        attempts.Add((Format.V2, AadHeaderBackupV1));
+
+        byte[]? cachedKey = null;
+        Format cachedKdf = 0;
+        try
+        {
+            foreach (var (kdf, aad) in attempts)
+            {
+                if (cachedKey is null || cachedKdf != kdf)
+                {
+                    SecureMemory.Wipe(cachedKey);
+                    cachedKey = DeriveKey(kdf, masterPassword, backupSalt, null, 0, null);
+                    cachedKdf = kdf;
+                }
+                var attemptKey = (byte[])cachedKey.Clone();
+                try { return Decrypt(attemptKey, nonce, cipher, tag, aad); }
+                catch (WrongPasswordException) { }
+                finally { CryptographicOperations.ZeroMemory(attemptKey); }
+            }
+            throw new WrongPasswordException();
+        }
+        finally
+        {
+            SecureMemory.Wipe(cachedKey);
         }
     }
 
@@ -871,16 +958,14 @@ public sealed class Vault : IDisposable
     /// <summary>Restores the vault header from a backup. Before writing, it verifies the vault actually opens with the restored header. Keeps the original as *.before-restore. Supports backups from formats v7 down to v2.</summary>
     public static void RestoreHeader(string vaultPath, string backupPath, string masterPassword, int pim = 0)
     {
-        var b = ReadHeaderBackup(backupPath, masterPassword);
+        var b = ReadHeaderBackup(backupPath, masterPassword, pim);
         var repaired = WithBackupHeader(File.ReadAllBytes(vaultPath), b);
         if (!OpensWith(vaultPath, repaired, b, masterPassword, pim))
             throw new InvalidDataException(
                 "The backup does not belong to this vault, or the vault content is damaged too (not just the header).");
 
-        File.Copy(vaultPath, vaultPath + ".before-restore", overwrite: true);
-        var tmp = vaultPath + ".tmp";
-        File.WriteAllBytes(tmp, repaired);
-        File.Move(tmp, vaultPath, overwrite: true);
+        DurableFile.WriteAllBytes(vaultPath + ".before-restore", File.ReadAllBytes(vaultPath));
+        DurableFile.ReplaceAtomically(vaultPath, repaired);
         WriteChecksum(vaultPath, repaired);
     }
 
@@ -900,7 +985,7 @@ public sealed class Vault : IDisposable
     /// <summary>VeraCrypt-style header check that changes nothing: verifies the backup opens with the password, whether the vault opens with its current header, whether that header is identical to the backup, and whether restoring from the backup would make the vault open. Throws <see cref="WrongPasswordException"/> when the backup does not open with the password.</summary>
     public static HeaderCheckReport CheckHeader(string vaultPath, string backupPath, string masterPassword, int pim = 0)
     {
-        var b = ReadHeaderBackup(backupPath, masterPassword);
+        var b = ReadHeaderBackup(backupPath, masterPassword, pim);
         var vault = File.ReadAllBytes(vaultPath);
         var checksum = VerifyChecksum(vaultPath, vault);
         bool needsDeviceKey = b.DeviceBound && DeviceKeyStore.Current() is null;
@@ -1104,11 +1189,10 @@ public sealed class Vault : IDisposable
 
         Directory.CreateDirectory(Path.GetDirectoryName(vaultPath)!);
         if (File.Exists(vaultPath))
-            File.Copy(vaultPath, vaultPath + ".before-restore", overwrite: true);
-        var tmp = vaultPath + ".tmp";
-        File.Copy(backupPath, tmp, overwrite: true);
-        File.Move(tmp, vaultPath, overwrite: true);
-        WriteChecksum(vaultPath);
+            DurableFile.WriteAllBytes(vaultPath + ".before-restore", File.ReadAllBytes(vaultPath));
+        var restored = File.ReadAllBytes(backupPath);
+        DurableFile.ReplaceAtomically(vaultPath, restored);
+        WriteChecksum(vaultPath, restored);
     }
 
     /// <summary>Merges entries (e.g. from a backup) into the vault. An entry with the same Id is overwritten only if the backup's is newer. Does not save – the caller calls Save().</summary>
