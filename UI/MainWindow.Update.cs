@@ -36,15 +36,59 @@ public partial class MainWindow
                 return;
             }
             Log.Info("Update check: {Version} available", update.Version.ToString(3));
-            _update = update;
-            UpdateText.Text = $"Phrasia {update.Version.ToString(3)} is available – you have {AppVersion}.";
-            UpdateBanner.Visibility = Visibility.Visible;
+            ShowUpdateBanner(update);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException
                                       or System.IO.IOException)
         {
             Log.Info("Update check skipped: {Reason}", ex.Message); // offline etc. – not an error for the user
         }
+    }
+
+    /// <summary>Manual check from the "Check now" button: works even when the startup check is off, ignores a
+    /// skipped version, and always tells the user the result (newer version, up to date, or why it failed).</summary>
+    private async void CheckUpdateNow_Click(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateNowButton.IsEnabled = false;
+        try
+        {
+            var current = typeof(MainWindow).Assembly.GetName().Version ?? new Version(1, 0, 0);
+            var update = await UpdateChecker.CheckAsync(current);
+            if (update is null)
+            {
+                Log.Info("Manual update check: Phrasia {Version} is up to date", AppVersion);
+                UpdateBanner.Visibility = Visibility.Collapsed;
+                AppMessageBox.Show(this, $"You have the latest version of Phrasia ({AppVersion}).", "Check for updates",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            Log.Info("Manual update check: {Version} available", update.Version.ToString(3));
+            ShowUpdateBanner(update);
+            var answer = AppMessageBox.Show(this,
+                $"Phrasia {update.Version.ToString(3)} is available – you have {AppVersion}.\n\nOpen the release page on GitHub?",
+                "Check for updates", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes);
+            if (answer == MessageBoxResult.Yes) UpdateDownload_Click(sender, e);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException
+                                      or System.IO.IOException)
+        {
+            Log.Info("Manual update check failed: {Reason}", ex.Message);
+            AppMessageBox.Show(this,
+                "Could not reach GitHub to check for updates. Check your internet connection and try again.\n\n" + ex.Message,
+                "Check for updates", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            CheckUpdateNowButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>Remembers the offered release and shows the update banner.</summary>
+    private void ShowUpdateBanner(UpdateInfo update)
+    {
+        _update = update;
+        UpdateText.Text = $"Phrasia {update.Version.ToString(3)} is available – you have {AppVersion}.";
+        UpdateBanner.Visibility = Visibility.Visible;
     }
 
     /// <summary>Opens the release page in the browser (always a github.com/LUKICSLA/Phrasia link).</summary>

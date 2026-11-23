@@ -107,11 +107,12 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource PrivacyBrush}"
                 BorderBrush="{DynamicResource PrivacyLineBrush}" BorderThickness="0,0,0,1" Padding="24,9">
             <DockPanel LastChildFill="True">
-                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
-                        Margin="12,0,0,0" Click="KoFi_Click" ToolTip="https://ko-fi.com/lukicsla">
+                <Button x:Name="CheckUpdateNowButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                        Padding="8,3" Margin="8,0,0,0" FontSize="12" VerticalAlignment="Center" Click="CheckUpdateNow_Click"
+                        ToolTip="Ask GitHub now whether a newer Phrasia exists. Only the app version is sent. Nothing is downloaded automatically.">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xEB51;" Foreground="{DynamicResource KoFiBrush}"/>
-                        <TextBlock Text="Support on Ko-fi"/>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="12" Margin="0,0,6,0"/>
+                        <TextBlock Text="Check now"/>
                     </StackPanel>
                 </Button>
                 <CheckBox x:Name="UpdateCheckBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0"

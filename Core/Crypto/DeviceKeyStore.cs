@@ -21,8 +21,11 @@ namespace Phrasia;
 /// </summary>
 internal static class DeviceKeyStore
 {
-    private static string Dir => Path.Combine(
+    private static string Dir => DirectoryOverride ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PassphraseGen");
+
+    /// <summary>Test override: where device.bin / device.imp live (so tests never touch the real profile).</summary>
+    internal static string? DirectoryOverride;
     private static string RawPath => Path.Combine(Dir, "device.bin");       // random secret (DPAPI)
     private static string ImportedPath => Path.Combine(Dir, "device.imp");  // migrated secret (DPAPI)
 
@@ -77,7 +80,7 @@ internal static class DeviceKeyStore
 
         var raw = EntropyPool.GetBytes(32); // OS CSPRNG + user entropy (mouse)
         Directory.CreateDirectory(Dir);
-        File.WriteAllBytes(RawPath, ProtectedData.Protect(raw, DpapiEntropy, DataProtectionScope.CurrentUser));
+        DurableFile.WriteAllBytes(RawPath, ProtectedData.Protect(raw, DpapiEntropy, DataProtectionScope.CurrentUser));
         return raw;
     }
 
@@ -101,65 +104,122 @@ internal static class DeviceKeyStore
 
     // ---------------- portable export / recovery of the device key ----------------
 
-    /// <summary>Exports the current device secret, encrypted with the master password, for migration/backup.</summary>
-    public static void ExportRecovery(string path, string masterPassword)
+    // Export file v2: [magic 20][params 8][salt 32][nonce 12][ciphertext 32][tag 16], AES-256-GCM, AAD = magic + params.
+    // The key is Argon2id with the vault's own parameters × PIM, so a stolen export file is as costly to attack as
+    // the vault. (v1 used PBKDF2-HMAC-SHA512 600k – GPU-friendly and much cheaper than the vault; read-only now.)
+    private static readonly byte[] ExportMagicV2 = "PHRASIA-DEVICE-KEY-2"u8.ToArray();
+    private static readonly byte[] ExportHkdfInfoV2 = "Phrasia device key export v2 | Argon2id (vault parameters) x PIM"u8.ToArray();
+    private const int ExportParamsSize = 8, ExportSaltSize = 32, ExportNonceSize = 12, SecretSize = 32, ExportTagSize = 16;
+    private static int ExportSizeV1 => ExportMagic.Length + ExportSaltSize + ExportNonceSize + SecretSize + ExportTagSize;
+    private static int ExportSizeV2 => ExportMagicV2.Length + ExportParamsSize + ExportSaltSize + ExportNonceSize + SecretSize + ExportTagSize;
+
+    /// <summary>Exports the current device secret for migration/backup, encrypted with the master password through
+    /// Argon2id with the vault's parameters × PIM. Call through <see cref="Vault.ExportDeviceKey"/>, which first
+    /// verifies the password belongs to the vault.</summary>
+    internal static void ExportRecovery(string path, string masterPassword, Argon2Params vaultParams, int pim)
     {
+        if (!vaultParams.IsPlausible) throw new ArgumentException("Invalid Argon2id parameters.", nameof(vaultParams));
+        if (pim < Vault.MinPim || pim > Vault.MaxPim) throw new ArgumentOutOfRangeException(nameof(pim));
         var d = Current() ?? throw new InvalidOperationException("Device binding is not available on this computer.");
-        var salt = EntropyPool.GetBytes(32);
-        var key = DeriveExportKey(masterPassword, salt);
-        var nonce = EntropyPool.GetBytes(12);
-        var ct = new byte[d.Length];
-        var tag = new byte[16];
+
+        var header = new byte[ExportMagicV2.Length + ExportParamsSize];
+        ExportMagicV2.CopyTo(header, 0);
+        WriteParams(header.AsSpan(ExportMagicV2.Length), vaultParams);
+        var salt = EntropyPool.GetBytes(ExportSaltSize);
+        var nonce = EntropyPool.GetBytes(ExportNonceSize);
+        var ct = new byte[SecretSize];
+        var tag = new byte[ExportTagSize];
+        var key = DeriveExportKeyV2(masterPassword, salt, vaultParams, pim);
         try
         {
-            using var aes = new AesGcm(key, 16);
-            aes.Encrypt(nonce, d, ct, tag, ExportMagic);
+            using var aes = new AesGcm(key, ExportTagSize);
+            aes.Encrypt(nonce, d, ct, tag, header);
         }
         finally { CryptographicOperations.ZeroMemory(key); }
 
-        using var fs = File.Create(path);
-        fs.Write(ExportMagic);
-        fs.Write(salt);
-        fs.Write(nonce);
-        fs.Write(ct);
-        fs.Write(tag);
+        DurableFile.WriteAllBytes(path, [.. header, .. salt, .. nonce, .. ct, .. tag]);
     }
 
-    /// <summary>Imports a device key from an export file (another PC) and stores it locally via DPAPI.</summary>
-    public static void ImportRecovery(string path, string masterPassword)
+    /// <summary>Imports a device key from an export file (another PC) and stores it locally via DPAPI.
+    /// <paramref name="pim"/> is the vault's PIM (needed for v2 files; ignored for old v1 files).</summary>
+    public static void ImportRecovery(string path, string masterPassword, int pim)
     {
         var all = File.ReadAllBytes(path);
-        int min = ExportMagic.Length + 32 + 12 + 32 + 16;
-        if (all.Length != min || !all.AsSpan(0, ExportMagic.Length).SequenceEqual(ExportMagic))
-            throw new InvalidDataException("This is not a Phrasia device-key file.");
+        byte[] key, aad;
+        int o;
+        if (all.Length == ExportSizeV2 && all.AsSpan(0, ExportMagicV2.Length).SequenceEqual(ExportMagicV2))
+        {
+            o = ExportMagicV2.Length;
+            var p = ReadParams(all.AsSpan(o, ExportParamsSize));
+            if (!p.IsPlausible) throw new InvalidDataException("This device-key file is damaged.");
+            if (!Argon2Kdf.IsAvailable) throw new InvalidDataException("This device-key file needs Argon2id, which is not available here.");
+            if (pim < Vault.MinPim || pim > Vault.MaxPim)
+                throw new InvalidDataException($"Enter the vault's PIM ({Vault.MinPim}–{Vault.MaxPim}) – this device-key file is protected by the master password and the PIM.");
+            aad = all[..(o + ExportParamsSize)];
+            o += ExportParamsSize;
+            key = DeriveExportKeyV2(masterPassword, all[o..(o + ExportSaltSize)], p, pim);
+        }
+        else if (all.Length == ExportSizeV1 && all.AsSpan(0, ExportMagic.Length).SequenceEqual(ExportMagic))
+        {
+            o = ExportMagic.Length;
+            aad = ExportMagic;
+            key = DeriveExportKeyV1(masterPassword, all[o..(o + ExportSaltSize)]);
+        }
+        else throw new InvalidDataException("This is not a Phrasia device-key file.");
 
-        int o = ExportMagic.Length;
-        var salt = all.AsSpan(o, 32).ToArray(); o += 32;
-        var nonce = all.AsSpan(o, 12).ToArray(); o += 12;
-        var ct = all.AsSpan(o, 32).ToArray(); o += 32;
-        var tag = all.AsSpan(o, 16).ToArray();
+        o += ExportSaltSize;
+        var nonce = all.AsSpan(o, ExportNonceSize).ToArray(); o += ExportNonceSize;
+        var ct = all.AsSpan(o, SecretSize).ToArray(); o += SecretSize;
+        var tag = all.AsSpan(o, ExportTagSize).ToArray();
 
-        var key = DeriveExportKey(masterPassword, salt);
-        var d = new byte[32];
+        var d = new byte[SecretSize];
         try
         {
-            using var aes = new AesGcm(key, 16);
-            aes.Decrypt(nonce, ct, tag, d, ExportMagic);
+            using var aes = new AesGcm(key, ExportTagSize);
+            aes.Decrypt(nonce, ct, tag, d, aad);
         }
         catch (CryptographicException) { throw new WrongPasswordException(); }
         finally { CryptographicOperations.ZeroMemory(key); }
 
         Directory.CreateDirectory(Dir);
-        File.WriteAllBytes(ImportedPath, ProtectedData.Protect(d, DpapiEntropy, DataProtectionScope.CurrentUser));
+        DurableFile.WriteAllBytes(ImportedPath, ProtectedData.Protect(d, DpapiEntropy, DataProtectionScope.CurrentUser));
         CryptographicOperations.ZeroMemory(d);
         _cached = null; // reload on next use
     }
 
-    /// <summary>Derives the export-file encryption key from the master password (PBKDF2-HMAC-SHA512, 600k, vault-independent).</summary>
-    private static byte[] DeriveExportKey(string password, byte[] salt)
+    /// <summary>v2 export key: Argon2id (vault parameters, passes × PIM) → HKDF-SHA256 → 32 B.</summary>
+    private static byte[] DeriveExportKeyV2(string password, byte[] salt, Argon2Params p, int pim)
+    {
+        var ikm = Argon2Kdf.Derive(password, salt, p.MemoryKiB, p.Passes * pim, p.Lanes, 64);
+        try
+        {
+            var key = new byte[32];
+            HKDF.DeriveKey(HashAlgorithmName.SHA256, ikm, key, salt, ExportHkdfInfoV2);
+            return key;
+        }
+        finally { CryptographicOperations.ZeroMemory(ikm); }
+    }
+
+    /// <summary>v1 export key (read-only legacy): PBKDF2-HMAC-SHA512, 600k iterations.</summary>
+    private static byte[] DeriveExportKeyV1(string password, byte[] salt)
     {
         var key = new byte[32];
         Rfc2898DeriveBytes.Pbkdf2(password.AsSpan(), salt, key, 600_000, HashAlgorithmName.SHA512);
         return key;
     }
+
+    /// <summary>Writes Argon2 parameters as [memory KiB int32][passes uint16][lanes byte][0].</summary>
+    private static void WriteParams(Span<byte> block, Argon2Params p)
+    {
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(block, p.MemoryKiB);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(block[4..], (ushort)p.Passes);
+        block[6] = (byte)p.Lanes;
+        block[7] = 0;
+    }
+
+    /// <summary>Reads parameters written by <see cref="WriteParams"/>.</summary>
+    private static Argon2Params ReadParams(ReadOnlySpan<byte> block) =>
+        new(System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(block),
+            System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(block[4..]),
+            block[7] == 0 ? block[6] : 0);
 }
