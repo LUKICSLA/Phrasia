@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phrasia – offline passphrase generator and password vault for Windows</title>
+  <meta name="description" content="Free, open-source passphrase generator and encrypted password vault for Windows. Works fully offline – no cloud, no accounts, no telemetry.">
+  <meta name="theme-color" content="#121219">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-96.png">
+  <meta property="og:title" content="Phrasia – Remember less. Secure more.">
+  <meta property="og:description" content="Offline passphrase generator and encrypted password vault for Windows.">
+  <meta property="og:image" content="assets/og-image.jpg">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="brand"><img src="assets/logo.svg" alt="" width="32" height="32"> Phrasia</a>
+    <nav class="nav-links">
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#security" data-i18n="nav.security">Security</a>
+      <a href="#download" data-i18n="nav.download">Download</a>
+      <a href="https://github.com/LUKICSLA/Phrasia" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <button class="lang" id="lang" type="button" aria-label="Switch language">SK</button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow" data-i18n="hero.eyebrow">Free &amp; open source · Windows 10 / 11</p>
+        <h1 data-i18n="hero.title">Remember less.<br><span class="grad">Secure more.</span></h1>
+        <p class="lead" data-i18n="hero.lead">Phrasia makes strong passwords out of real words and keeps them in an encrypted vault on your PC. No cloud, no account, nothing leaves your computer.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/LUKICSLA/Phrasia/releases/latest" data-dl>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+            <span data-i18n="hero.download">Download for Windows</span>
+          </a>
+          <a class="btn btn-ghost" href="#features" data-i18n="hero.more">What can it do?</a>
+        </div>
+        <p class="meta"><span id="ver">v1.21.0</span> · <span data-i18n="hero.meta">single .exe, no installation</span></p>
+      </div>
+
+      <div class="demo" aria-hidden="true">
+        <div class="demo-head">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="demo-title" data-i18n="demo.title">Generator</span>
+        </div>
+        <div class="demo-body">
+          <div class="demo-label" data-i18n="demo.label">Your new passphrase</div>
+          <div class="phrase" id="phrase">Lantern.Mango7.Orbit.Velvet</div>
+          <div class="bar"><span></span></div>
+          <div class="demo-row">
+            <span data-i18n="demo.strength">Very strong</span>
+            <span class="muted" data-i18n="demo.crack">≈ centuries to crack</span>
+          </div>
+          <div class="chips">
+            <span class="chip">SK</span><span class="chip">CZ</span><span class="chip on">EN</span>
+            <span class="chip">4 <span data-i18n="demo.words">words</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why -->
+  <section class="why wrap">
+    <p data-i18n="why">Passwords like <code>Tr0ub4dor&amp;3</code> are hard for you to remember and easy for computers to guess. A few random words are the other way round. That is all Phrasia does – it generates them properly and keeps them safe.</p>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="wrap">
+    <h2 data-i18n="feat.title">What's inside</h2>
+    <div class="cards">
+      <article class="card">
+        <div class="ico">
+          <svg viewBox="0 0 24 24"><path d="M4 7h7M4 12h10M4 17h5M16 5l4 4-8 8H8v-4z"/></svg>
+        </div>
+        <h3 data-i18n="feat.gen.t">Passphrase generator</h3>
+        <ul data-i18n="feat.gen.l">
+          <li>Slovak, Czech and English word lists – or your own</li>
+          <li>Mix languages, separators, numbers and capitals</li>
+          <li>Strength and “time to crack” for every result</li>
+          <li>Presets and several variants at once</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="ico">
+          <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+        <h3 data-i18n="feat.vault.t">Password vault</h3>
+        <ul data-i18n="feat.vault.l">
+          <li>Title, username, password, URL and notes</li>
+          <li>Health report: reused, weak and old passwords</li>
+          <li>Clipboard that clears itself, auto-lock</li>
+          <li>Backups and header backup / restore</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="ico">
+          <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 data-i18n="feat.priv.t">Private by design</h3>
+        <ul data-i18n="feat.priv.l">
+          <li>Works completely offline</li>
+          <li>No account, no sync, no telemetry</li>
+          <li>Optional screen-capture protection</li>
+          <li>Light and dark theme, follows Windows</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section id="security" class="wrap">
+    <h2 data-i18n="sec.title">Security in short</h2>
+    <div class="sec-grid">
+      <div class="sec"><strong>Argon2id</strong><span data-i18n="sec.argon">key derivation, tuned to your PC</span></div>
+      <div class="sec"><strong>AES-256-GCM + ChaCha20</strong><span data-i18n="sec.aead">two layers of authenticated encryption</span></div>
+      <div class="sec"><strong>PIM</strong><span data-i18n="sec.pim">a secret number on top of the master password</span></div>
+      <div class="sec"><strong data-i18n="sec.bind.t">Device-bound</strong><span data-i18n="sec.bind">vault is tied to your PC and Windows account</span></div>
+    </div>
+    <p class="note" data-i18n="sec.note">The vault is only as strong as your master password and PIM. Not sure? Let Phrasia suggest one.</p>
+  </section>
+
+  <!-- Before you start -->
+  <section class="wrap">
+    <h2 data-i18n="know.title">Good to know</h2>
+    <div class="know">
+      <div class="k k-imp">
+        <h3 data-i18n="know.key.t">Export your device key</h3>
+        <p data-i18n="know.key">Right after creating a vault, use <em>Export device key…</em> and store the file safely. Without it you can't open the vault on another PC or after reinstalling Windows.</p>
+      </div>
+      <div class="k k-warn">
+        <h3 data-i18n="know.pw.t">No password reset</h3>
+        <p data-i18n="know.pw">Forget the master password or PIM and the vault is gone. There's no back door – that's the point.</p>
+      </div>
+      <div class="k">
+        <h3 data-i18n="know.audit.t">Not audited</h3>
+        <p data-i18n="know.audit">Phrasia is a personal project without an independent security audit. Keep backups and use it on a computer you trust.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section id="download" class="wrap">
+    <div class="dl">
+      <img src="assets/logo.svg" alt="" width="72" height="72">
+      <h2 data-i18n="dl.title">Get Phrasia</h2>
+      <p class="muted" data-i18n="dl.sub">Windows 10 (1607+) or 11, 64-bit. No installation, no .NET needed.</p>
+      <a class="btn btn-primary btn-lg" href="https://github.com/LUKICSLA/Phrasia/releases/latest" data-dl>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+        <span><span data-i18n="dl.btn">Download Phrasia.exe</span> <small id="size"></small></span>
+      </a>
+      <p class="small"><a href="https://github.com/LUKICSLA/Phrasia/releases" target="_blank" rel="noopener" data-i18n="dl.all">All releases &amp; changelog</a></p>
+
+      <div class="steps">
+        <div>
+          <b>SmartScreen</b>
+          <p data-i18n="dl.ss">The .exe isn't code-signed, so Windows may warn you. Click <em>More info → Run anyway</em>.</p>
+        </div>
+        <div>
+          <b data-i18n="dl.verify.t">Verify the file</b>
+          <p data-i18n="dl.verify">Compare the SHA-256 with the one in the release:</p>
+          <div class="code">
+            <code id="hashcmd">Get-FileHash .\Phrasia.exe -Algorithm SHA256</code>
+            <button type="button" class="copy" data-copy="hashcmd" data-i18n="copy">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <p>© 2026 Lukáš „LUKI“ Maár · <a href="https://github.com/LUKICSLA/Phrasia/blob/production/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></p>
+    <p>
+      <a href="https://github.com/LUKICSLA/Phrasia" target="_blank" rel="noopener" data-i18n="foot.src">Source code</a> ·
+      <a href="https://ko-fi.com/lukicsla" target="_blank" rel="noopener" data-i18n="foot.kofi">Buy me a coffee ☕</a>
+    </p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
