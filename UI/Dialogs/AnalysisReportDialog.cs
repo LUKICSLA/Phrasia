@@ -84,12 +84,12 @@ internal sealed class AnalysisReportDialog : Window
             (a.ReusedGroups.Count > 4 ? $"\n• …and {a.ReusedGroups.Count - 4} more group(s)" : ""),
             "If one site leaks, every account with the same password is exposed.");
         AddFinding(root, a.Weak.Count > 0, Red, $"{a.Weak.Count} weak password{Plural(a.Weak.Count)}",
-            Names(a.Weak), "Under 60 bits (75 bits for critical accounts).");
+            Names(a.Weak), $"Under {VaultAnalyzer.WeakBits:F0} bits ({VaultAnalyzer.CriticalBits:F0} bits for critical accounts).");
         AddFinding(root, a.CommonPattern.Count > 0, Orange, $"{a.CommonPattern.Count} with common patterns",
             Names(a.CommonPattern), "Contains things like 123456, qwerty, password or aaaa – these are tried first.");
         AddFinding(root, a.Personal.Count > 0, Orange, $"{a.Personal.Count} contain the site name or username",
             Names(a.Personal), "Easy to guess for anyone who knows the account.");
-        AddFinding(root, a.Old.Count > 0, Orange, $"{a.Old.Count} not changed for over a year",
+        AddFinding(root, a.Old.Count > 0, Orange, $"{a.Old.Count} not changed for {VaultAnalyzer.OldAfterText}",
             Names(a.Old), "Old passwords are more likely to appear in past breaches.");
         AddFinding(root, a.Empty.Count > 0, R("MutedBrush"), $"{a.Empty.Count} item{Plural(a.Empty.Count)} without a password",
             Names(a.Empty), "Fill in the password or delete the item if it is no longer needed.");

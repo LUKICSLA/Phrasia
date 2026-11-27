@@ -16,11 +16,11 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="24,14">
             <DockPanel>
-                <Button x:Name="ThemeButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
-                        Margin="8,0,0,0" Click="Theme_Click" ToolTip="Switch the color theme: System → Light → Dark">
+                <Button x:Name="SettingsButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                        Margin="8,0,0,0" Click="OpenSettings_Click" ToolTip="Security, backups, password health, appearance and updates (Ctrl+,)">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock x:Name="ThemeIcon" Style="{StaticResource Icon}" Text="&#xE706;"/>
-                        <TextBlock x:Name="ThemeLabel" Text="System"/>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE713;"/>
+                        <TextBlock Text="Settings"/>
                     </StackPanel>
                 </Button>
                 <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
@@ -79,11 +79,6 @@
             <DockPanel>
                 <TextBlock x:Name="VersionText" DockPanel.Dock="Right" Foreground="{DynamicResource AccentBrush}"
                            FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
-                <CheckBox x:Name="CaptureProtectionCheck" DockPanel.Dock="Right" IsChecked="True"
-                          FontSize="12" Margin="0,0,22,0" VerticalAlignment="Center"
-                          Content="Hide from screen capture"
-                          ToolTip="Screenshots, screen recording and screen sharing show a black window instead of your passwords"
-                          Checked="CaptureProtection_Changed" Unchecked="CaptureProtection_Changed"/>
                 <TextBlock DockPanel.Dock="Right" FontSize="12" VerticalAlignment="Center" Margin="0,0,18,0">
                     <Hyperlink Click="OpenLogs_Click" Foreground="{DynamicResource MutedBrush}" TextDecorations="{x:Null}"
                                ToolTip="View decrypted local logs (encrypted on disk, never contain passwords)">Logs</Hyperlink>
@@ -107,18 +102,6 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource PrivacyBrush}"
                 BorderBrush="{DynamicResource PrivacyLineBrush}" BorderThickness="0,0,0,1" Padding="24,9">
             <DockPanel LastChildFill="True">
-                <Button x:Name="CheckUpdateNowButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
-                        Padding="8,3" Margin="8,0,0,0" FontSize="12" VerticalAlignment="Center" Click="CheckUpdateNow_Click"
-                        ToolTip="Ask GitHub now whether a newer Phrasia exists. Only the app version is sent. Nothing is downloaded automatically.">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="12" Margin="0,0,6,0"/>
-                        <TextBlock Text="Check now"/>
-                    </StackPanel>
-                </Button>
-                <CheckBox x:Name="UpdateCheckBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0"
-                          FontSize="12" Content="Check for updates"
-                          ToolTip="At startup, ask GitHub whether a newer Phrasia exists. Only the app version is sent – nothing about you or your vault. Nothing is downloaded automatically."
-                          Checked="UpdateCheck_Changed" Unchecked="UpdateCheck_Changed"/>
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="16" VerticalAlignment="Center"
                            Foreground="{DynamicResource PrivacyIconBrush}"/>
                 <TextBlock VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"
@@ -340,10 +323,6 @@
                                               FontSize="12" VerticalAlignment="Center" Margin="16,0,0,0"
                                               ToolTip="Show the password in plain text"
                                               Checked="ShowPasswordMain_Changed" Unchecked="ShowPasswordMain_Changed"/>
-                                    <CheckBox x:Name="HoverRevealCheck" DockPanel.Dock="Right" Content="Reveal on hover"
-                                              FontSize="12" VerticalAlignment="Center" IsChecked="False"
-                                              ToolTip="Show hidden passwords (main and variants) while the mouse is over them"
-                                              Checked="HoverReveal_Changed" Unchecked="HoverReveal_Changed"/>
                                     <TextBlock Text="GENERATED PASSWORD" Style="{StaticResource SectionLabel}" Margin="0"
                                                VerticalAlignment="Center"/>
                                 </DockPanel>
@@ -607,8 +586,7 @@
                                                HorizontalAlignment="Left" IsHitTestVisible="False"/>
                                 </Grid>
 
-                                <TextBlock x:Name="VaultHealthText" DockPanel.Dock="Top" FontSize="12" Margin="2,8,0,0"
-                                           ToolTip="Reused = the same password in more than one item. Weak = estimated strength under 60 bits."/>
+                                <TextBlock x:Name="VaultHealthText" DockPanel.Dock="Top" FontSize="12" Margin="2,8,0,0"/>
 
                                 <Border x:Name="AttentionFilterBar" DockPanel.Dock="Top" Visibility="Collapsed"
                                         Background="{DynamicResource WarningSoftBrush}" CornerRadius="8" Padding="10,6" Margin="0,8,0,0">
@@ -673,6 +651,13 @@
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Style="{StaticResource Icon}" Text="&#xE8B5;" FontSize="12"/>
                                             <TextBlock Text="Import items from backup…"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Margin="0,4,0,0" Click="ImportKeePass_Click"
+                                            ToolTip="Adds items from a KeePass database (*.kdbx), a KeePass XML export, or a CSV export of KeePassXC, Bitwarden, Proton Pass, 1Password, Chrome/Edge or Firefox">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8B5;" FontSize="12"/>
+                                            <TextBlock Text="Import from KeePass / CSV…"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>

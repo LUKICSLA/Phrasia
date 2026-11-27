@@ -16,8 +16,9 @@ namespace Phrasia;
 /// <summary>The "Vault" tab – storing passwords in an encrypted file.</summary>
 public partial class MainWindow
 {
-    private const int AutoLockMinutes = 5;
-    private const int ClipboardClearSeconds = 20;
+    /// <summary>Auto-lock delay and clipboard clearing delay – from the Settings window.</summary>
+    private int AutoLockMinutes => _presetFile.AutoLockMinutes;
+    private int ClipboardClearSeconds => _presetFile.ClipboardClearSeconds;
 
     private Vault? _vault;
     private VaultEntry? _editing;          // null = a new (not yet saved) entry
@@ -26,8 +27,9 @@ public partial class MainWindow
     private bool _suppressSelection;
     private string? _clipboardValue;
 
-    private readonly DispatcherTimer _autoLockTimer = new() { Interval = TimeSpan.FromMinutes(AutoLockMinutes) };
-    private readonly DispatcherTimer _clipboardTimer = new() { Interval = TimeSpan.FromSeconds(ClipboardClearSeconds) };
+    // intervals are set from the settings in ApplySettings()
+    private readonly DispatcherTimer _autoLockTimer = new() { Interval = TimeSpan.FromMinutes(AppSettings.DefaultAutoLockMinutes) };
+    private readonly DispatcherTimer _clipboardTimer = new() { Interval = TimeSpan.FromSeconds(AppSettings.DefaultClipboardClearSeconds) };
     private readonly DispatcherTimer _entryStatusTimer = new() { Interval = TimeSpan.FromSeconds(2) };
     private readonly DispatcherTimer _lockoutTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly UnlockThrottle _throttle = new(Vault.DefaultPath);
@@ -267,6 +269,7 @@ public partial class MainWindow
 
             _autoLockTimer.Start();
             UpdateDeviceBindingUi();
+            RunAutoBackup(); // daily mode: the first unlock of the day keeps a copy even without changes
             if (_vault.WasUpgraded)
                 ShowEntryStatus($"Vault upgraded – {_vault.KdfInfo} ✓");
         }
@@ -315,6 +318,7 @@ public partial class MainWindow
         }
         if (_vault is not null) Log.Info("Vault locked: {Reason}", message ?? "by the user");
         _autoLockTimer.Stop();
+        if (_presetFile.ClearClipboardOnLock) ClearClipboardIfOurs();
         _vault?.Dispose();
         _vault = null;
         DeviceKeyStore.ClearCache(); // do not keep the device secret in RAM after locking
@@ -671,8 +675,6 @@ public partial class MainWindow
 
     // ---------------- password health overview ----------------
 
-    private const double WeakEntryBits = 60;
-    private const double CriticalEntryBits = 75;
 
     /// <summary>Strength level 0–5 – same thresholds as the generator rating (Rate).</summary>
     private static int StrengthLevel(double bits) => bits switch
@@ -681,7 +683,7 @@ public partial class MainWindow
     };
 
     /// <summary>Minimum required entropy – critical accounts have a stricter threshold.</summary>
-    private static double RequiredBits(bool critical) => critical ? CriticalEntryBits : WeakEntryBits;
+    private static double RequiredBits(bool critical) => VaultAnalyzer.RequiredBits(critical);
 
     /// <summary>Re-evaluates the entry password info when the Critical flag changes.</summary>
     private void CriticalCheck_Changed(object sender, RoutedEventArgs e) => UpdateEntryPasswordInfo();
@@ -741,12 +743,12 @@ public partial class MainWindow
                     " – use a unique password for every account.";
             brush = WarningBrush;
         }
-        else if (CriticalCheck.IsChecked == true && bits < CriticalEntryBits)
+        else if (CriticalCheck.IsChecked == true && bits < VaultAnalyzer.CriticalBits)
         {
-            text += $"\nCritical accounts deserve {CriticalEntryBits:F0}+ bits – generate a new one (↻), ideally with Recommended mode.";
+            text += $"\nCritical accounts deserve {VaultAnalyzer.CriticalBits:F0}+ bits – generate a new one (↻), ideally with Recommended mode.";
             brush = WarningBrush;
         }
-        else if (bits < WeakEntryBits)
+        else if (bits < VaultAnalyzer.WeakBits)
         {
             text += " – consider generating a new one (↻).";
             brush = WarningBrush;
@@ -803,7 +805,7 @@ public partial class MainWindow
     {
         if (WindowState != WindowState.Minimized) return;
         ClearGeneratedPasswords("Hidden when the window was minimized");
-        if (_vault is not null) LockVault("The vault was locked when the window was minimized.");
+        if (_vault is not null && _presetFile.LockOnMinimize) LockVault("The vault was locked when the window was minimized.");
     }
 
     // ---------------- screen-capture protection ----------------
@@ -818,14 +820,7 @@ public partial class MainWindow
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        ApplyCaptureProtection(CaptureProtectionCheck.IsChecked == true);
-    }
-
-    /// <summary>Toggles screen-capture protection for the window.</summary>
-    private void CaptureProtection_Changed(object sender, RoutedEventArgs e)
-    {
-        if (!IsLoaded) return;
-        ApplyCaptureProtection(CaptureProtectionCheck.IsChecked == true);
+        ApplyCaptureProtection(_presetFile.CaptureProtection);
     }
 
     /// <summary>Applies or removes screen-capture protection for the main window.</summary>
@@ -836,8 +831,8 @@ public partial class MainWindow
         ApplyCaptureProtection(this, on);
     }
 
-    /// <summary>True when "Hide from screen capture" is enabled (dialogs that show secrets follow it).</summary>
-    internal bool IsCaptureProtectionOn => CaptureProtectionCheck.IsChecked == true;
+    /// <summary>True when screen-capture protection is on (Settings › Privacy); dialogs that show secrets follow it.</summary>
+    internal bool IsCaptureProtectionOn => _presetFile.CaptureProtection;
 
     /// <summary>Windows 10 2004+: the window is fully excluded from screenshots / recording / screen sharing. Older Windows: a black area is captured instead of the window content. Call once the window handle exists.</summary>
     internal static void ApplyCaptureProtection(Window window, bool on)
@@ -1141,7 +1136,8 @@ public partial class MainWindow
             .Where(x => q.Length == 0
                         || x.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)
                         || x.Username.Contains(q, StringComparison.CurrentCultureIgnoreCase)
-                        || x.Url.Contains(q, StringComparison.CurrentCultureIgnoreCase))
+                        || x.Url.Contains(q, StringComparison.CurrentCultureIgnoreCase)
+                        || (_presetFile.SearchNotes && x.Note.Contains(q, StringComparison.CurrentCultureIgnoreCase)))
             .OrderByDescending(x => x.Critical)          // critical accounts on top
             .ThenBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -1300,6 +1296,7 @@ public partial class MainWindow
         try
         {
             _vault!.Save();
+            RunAutoBackup();
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -1463,6 +1460,13 @@ public partial class MainWindow
             {
                 if (e.Key == Key.S) { SaveEntry_Click(sender, e); e.Handled = true; return; }
                 if (e.Key == Key.N) { StartNewEntry(TryGeneratePassword()); e.Handled = true; return; }
+            }
+            // Ctrl+, – settings
+            if (e.Key == Key.OemComma && !IsVaultBusy)
+            {
+                OpenSettings_Click(sender, e);
+                e.Handled = true;
+                return;
             }
             // Ctrl+L – lock the vault immediately
             if (e.Key == Key.L && _vault is not null)

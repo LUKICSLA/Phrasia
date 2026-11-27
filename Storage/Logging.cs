@@ -19,13 +19,16 @@ namespace Phrasia;
 /// writing and stored as Base64. On disk the log is therefore unreadable – in a hex editor or Notepad it
 /// looks like random text, and only the same Windows user on the same computer can decrypt it. The
 /// readable content is shown only by the built-in viewer (the "Logs" button). Logs are purely local –
-/// nothing is sent anywhere. Path: %LOCALAPPDATA%\PassphraseGen\logs\phrasia-YYYY-MM-DD.log (older than
-/// 30 days are deleted).
+/// nothing is sent anywhere. Path: %LOCALAPPDATA%\PassphraseGen\logs\phrasia-YYYY-MM-DD.log (files older
+/// than the retention chosen in Settings are deleted; logging can also be turned off there).
 /// </summary>
 internal static class Logging
 {
-    /// <summary>How many days of log files are kept before deletion.</summary>
-    public const int KeepDays = 30;
+    /// <summary>How many days of log files are kept before deletion (Settings › Logging).</summary>
+    public static int KeepDays { get; private set; } = AppSettings.DefaultLogKeepDays;
+
+    /// <summary>"off", "normal" (Info and above) or "detailed" (Debug and above) – Settings › Logging.</summary>
+    public static string Level { get; private set; } = "normal";
 
     /// <summary>DPAPI domain separation for log lines (not a secret).</summary>
     internal static readonly byte[] Entropy = "Phrasia | encrypted log | v1"u8.ToArray();
@@ -39,9 +42,12 @@ internal static class Logging
         "${longdate} | ${level:uppercase=true:padding=-5} | ${logger:shortName=true} | ${message}" +
         "${onexception:inner= | ${exception:format=ToString}}";
 
-    /// <summary>Configures NLog with the encrypting file target plus a debugger target, then prunes old logs.</summary>
-    public static void Configure()
+    /// <summary>Configures NLog with the encrypting file target plus a debugger target, then prunes old logs.
+    /// Called at startup and again whenever the logging settings change.</summary>
+    public static void Configure(string level = "normal", int keepDays = AppSettings.DefaultLogKeepDays)
     {
+        Level = level;
+        KeepDays = keepDays;
         try
         {
             var config = new LoggingConfiguration();
@@ -50,7 +56,8 @@ internal static class Logging
                 Directory = LogDirectory,
                 Layout = LineLayout
             };
-            config.AddRule(LogLevel.Info, LogLevel.Fatal, file);
+            if (level != "off")
+                config.AddRule(level == "detailed" ? LogLevel.Debug : LogLevel.Info, LogLevel.Fatal, file);
 
             var debugger = new DebuggerTarget("debugger")
             {
@@ -100,6 +107,23 @@ internal static class Logging
 
         if (lines.Count > maxLines) lines.RemoveRange(0, lines.Count - maxLines);
         return lines;
+    }
+
+    /// <summary>Deletes every log file (Settings › Logging › Delete logs now). Returns the number deleted.</summary>
+    public static int DeleteAll()
+    {
+        int n = 0;
+        try
+        {
+            if (!Directory.Exists(LogDirectory)) return 0;
+            foreach (var f in Directory.EnumerateFiles(LogDirectory, "phrasia-*.log"))
+            {
+                try { File.Delete(f); n++; }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return n;
     }
 
     /// <summary>Deletes log files older than <see cref="KeepDays"/> days.</summary>

@@ -54,8 +54,9 @@ public sealed class VariantItem : INotifyPropertyChanged
 /// </summary>
 public partial class MainWindow
 {
-    private const int GeneratorIdleMinutes = 3;
-    private readonly DispatcherTimer _generatorIdleTimer = new() { Interval = TimeSpan.FromMinutes(GeneratorIdleMinutes) };
+    /// <summary>Idle time before generated passwords are hidden – from the Settings window.</summary>
+    private int GeneratorIdleMinutes => _presetFile.GeneratorIdleMinutes;
+    private readonly DispatcherTimer _generatorIdleTimer = new() { Interval = TimeSpan.FromMinutes(AppSettings.DefaultGeneratorIdleMinutes) };
     private bool _generatorCleared;
 
     /// <summary>Wires the idle timer and the auto-clear triggers for generated passwords.</summary>
@@ -81,7 +82,7 @@ public partial class MainWindow
         _current = main;
         UpdateMainPasswordDisplay();
         bool plain = ShowVariantsCheck.IsChecked == true;
-        bool hover = HoverRevealCheck.IsChecked == true;
+        bool hover = _presetFile.HoverReveal;
         VariantsList.ItemsSource = variants.Select(v => new VariantItem(v, plain, hover)).ToList();
         _generatorIdleTimer.Stop();
         _generatorIdleTimer.Start();
@@ -124,7 +125,7 @@ public partial class MainWindow
     {
         if (_generatorCleared || string.IsNullOrEmpty(_current)) return; // cleared – the info text is kept
 
-        bool hoverReveal = HoverRevealCheck.IsChecked == true && _mainPasswordHover;
+        bool hoverReveal = _presetFile.HoverReveal && _mainPasswordHover;
         if (ShowPasswordMainCheck.IsChecked == true || hoverReveal)
         {
             RenderPassword(_current);
@@ -138,15 +139,13 @@ public partial class MainWindow
         });
     }
 
-    /// <summary>Applies the hover-reveal toggle to the main password and variants.</summary>
-    private void HoverReveal_Changed(object sender, RoutedEventArgs e)
+    /// <summary>Applies the hover-reveal setting (Settings › Privacy) to the main password and variants.</summary>
+    private void ApplyHoverReveal()
     {
-        if (!IsLoaded) return;
-        bool on = HoverRevealCheck.IsChecked == true;
+        bool on = _presetFile.HoverReveal;
         if (VariantsList.ItemsSource is IEnumerable<VariantItem> items)
             foreach (var v in items) v.HoverReveal = on;
         UpdateMainPasswordDisplay();
-        _presetFile.HoverReveal = on;
     }
 
     /// <summary>Applies the Show toggle for the main password.</summary>
