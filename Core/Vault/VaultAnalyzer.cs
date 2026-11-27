@@ -37,12 +37,31 @@ public sealed class VaultAnalysis
 /// <summary>Analyzes all stored passwords – runs locally, nothing is sent anywhere.</summary>
 public static class VaultAnalyzer
 {
+    // Thresholds come from the Settings window (MainWindow.ApplySettings) – the single source for the list
+    // badges, the editor hint and this analysis.
+
     /// <summary>Below this entropy (bits) a non-critical password is flagged weak.</summary>
-    public const double WeakBits = 60;
+    public static double WeakBits { get; set; } = AppSettings.DefaultWeakBits;
     /// <summary>Below this entropy (bits) a critical password is flagged weak.</summary>
-    public const double CriticalBits = 75;
-    /// <summary>A password unchanged longer than this many days is flagged old.</summary>
-    public const int OldAfterDays = 365;
+    public static double CriticalBits { get; set; } = AppSettings.DefaultCriticalBits;
+    /// <summary>A password unchanged longer than this many months is flagged old (0 = never).</summary>
+    public static int OldAfterMonths { get; set; } = AppSettings.DefaultOldAfterMonths;
+
+    /// <summary>Minimum bits required for an entry (critical accounts have the stricter threshold).</summary>
+    public static double RequiredBits(bool critical) => critical ? CriticalBits : WeakBits;
+
+    /// <summary>True when the password was last changed longer ago than the "old" threshold.</summary>
+    public static bool IsOld(VaultEntry e, DateTime today) =>
+        OldAfterMonths > 0 && (e.PasswordChanged ?? e.Modified) < today.AddMonths(-OldAfterMonths);
+
+    /// <summary>"over a year", "over 6 months" … for messages.</summary>
+    public static string OldAfterText => OldAfterMonths switch
+    {
+        12 => "over a year",
+        24 => "over 2 years",
+        36 => "over 3 years",
+        _ => $"over {OldAfterMonths} months"
+    };
 
     private static readonly string[] CommonFragments =
     {
@@ -80,10 +99,8 @@ public static class VaultAnalyzer
             }
 
             double bits = MasterPasswordPolicy.EstimateBits(pw);
-            if (bits < (e.Critical ? CriticalBits : WeakBits)) Flag(a, a.Weak, e);
-
-            var changed = e.PasswordChanged ?? e.Modified;
-            if ((today - changed).TotalDays > OldAfterDays) Flag(a, a.Old, e);
+            if (bits < RequiredBits(e.Critical)) Flag(a, a.Weak, e);
+            if (IsOld(e, today)) Flag(a, a.Old, e);
 
             if (ContainsPersonal(pw, e)) Flag(a, a.Personal, e);
             if (HasCommonPattern(pw)) Flag(a, a.CommonPattern, e);

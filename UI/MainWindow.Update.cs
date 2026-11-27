@@ -7,13 +7,10 @@ namespace Phrasia;
 public partial class MainWindow
 {
     private UpdateInfo? _update;
-    private bool _updateInitDone;
 
-    /// <summary>Restores the setting and, when enabled, checks GitHub in the background a few seconds after start.</summary>
+    /// <summary>When enabled in Settings, checks GitHub in the background a few seconds after start.</summary>
     private void InitUpdateCheck()
     {
-        UpdateCheckBox.IsChecked = _presetFile.CheckForUpdates;
-        _updateInitDone = true;
         if (_presetFile.CheckForUpdates) _ = CheckForUpdateAsync(TimeSpan.FromSeconds(3));
     }
 
@@ -45,11 +42,11 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Manual check from the "Check now" button: works even when the startup check is off, ignores a
-    /// skipped version, and always tells the user the result (newer version, up to date, or why it failed).</summary>
-    private async void CheckUpdateNow_Click(object sender, RoutedEventArgs e)
+    /// <summary>Manual check from Settings › "Check now": works even when the startup check is off, ignores a
+    /// skipped version, and always tells the user the result (newer version, up to date, or why it failed).
+    /// Messages are shown over <paramref name="owner"/> (the Settings window).</summary>
+    internal async Task CheckForUpdatesNowAsync(Window owner)
     {
-        CheckUpdateNowButton.IsEnabled = false;
         try
         {
             var current = typeof(MainWindow).Assembly.GetName().Version ?? new Version(1, 0, 0);
@@ -58,28 +55,24 @@ public partial class MainWindow
             {
                 Log.Info("Manual update check: Phrasia {Version} is up to date", AppVersion);
                 UpdateBanner.Visibility = Visibility.Collapsed;
-                AppMessageBox.Show(this, $"You have the latest version of Phrasia ({AppVersion}).", "Check for updates",
+                AppMessageBox.Show(owner, $"You have the latest version of Phrasia ({AppVersion}).", "Check for updates",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             Log.Info("Manual update check: {Version} available", update.Version.ToString(3));
             ShowUpdateBanner(update);
-            var answer = AppMessageBox.Show(this,
+            var answer = AppMessageBox.Show(owner,
                 $"Phrasia {update.Version.ToString(3)} is available – you have {AppVersion}.\n\nOpen the release page on GitHub?",
                 "Check for updates", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes);
-            if (answer == MessageBoxResult.Yes) UpdateDownload_Click(sender, e);
+            if (answer == MessageBoxResult.Yes) UpdateDownload_Click(owner, new RoutedEventArgs());
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException
                                       or System.IO.IOException)
         {
             Log.Info("Manual update check failed: {Reason}", ex.Message);
-            AppMessageBox.Show(this,
+            AppMessageBox.Show(owner,
                 "Could not reach GitHub to check for updates. Check your internet connection and try again.\n\n" + ex.Message,
                 "Check for updates", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-        finally
-        {
-            CheckUpdateNowButton.IsEnabled = true;
         }
     }
 
@@ -108,17 +101,4 @@ public partial class MainWindow
 
     /// <summary>Hides the banner until the next start.</summary>
     private void UpdateDismiss_Click(object sender, RoutedEventArgs e) => UpdateBanner.Visibility = Visibility.Collapsed;
-
-    /// <summary>Turns the startup check on/off; turning it on checks right away.</summary>
-    private void UpdateCheck_Changed(object sender, RoutedEventArgs e)
-    {
-        if (!_updateInitDone) return;
-        bool on = UpdateCheckBox.IsChecked == true;
-        if (_presetFile.CheckForUpdates == on) return;
-        _presetFile.CheckForUpdates = on;
-        PresetStore.Save(_presetFile);
-        Log.Info("Update check {State}", on ? "enabled" : "disabled");
-        if (on) _ = CheckForUpdateAsync(TimeSpan.Zero);
-        else UpdateBanner.Visibility = Visibility.Collapsed;
-    }
 }

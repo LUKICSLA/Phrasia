@@ -23,11 +23,14 @@ new versions on GitHub, which you can turn off.
 
 **Updates**
 - Checks GitHub for a newer release at startup and shows a download link (nothing is installed
-  automatically; can be turned off)
+  automatically; can be turned off in Settings)
 
 **Look & feel**
 
-- Light and dark theme - follows the Windows app mode by default, or pick one in the header
+- Light and dark theme - follows the Windows app mode by default, or pick one in Settings
+- One Settings window (Ctrl+,) for everything: auto-lock, clipboard clearing, lock on minimize, screen-capture
+  protection, generator privacy, password-health limits (weak / old), automatic vault backups, startup tab,
+  search in notes, theme, update check and logging
 
 **Password vault**
 
@@ -36,7 +39,12 @@ new versions on GitHub, which you can turn off.
 - Secure clipboard that clears itself, auto-lock, optional screen-capture protection
 - Strong master password suggestions and mouse-movement randomness for critical operations
 - Backups, header backups and VeraCrypt-style header check / restore
+- Automatic backups of the encrypted vault (daily or after every change, keeps the newest N copies, any folder)
 - File checksum that reveals when the vault was changed, damaged or replaced outside Phrasia
+- Import from KeePass: `.kdbx` databases (KDBX 3.1 / 4.x, AES-KDF / Argon2, AES-256 / ChaCha20, password and/or key file)
+  and KeePass XML exports – decrypted only in memory, the KeePass file is never changed
+- Import CSV exports of KeePassXC, Bitwarden, Proton Pass, 1Password, Chrome / Edge and Firefox, with an option to
+  securely delete the plain-text export afterwards
 
 ## Security in short
 

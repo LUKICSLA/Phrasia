@@ -7,16 +7,18 @@ namespace Phrasia;
 /// <summary>Presets – saved generator settings and restoring the last-used settings at startup.</summary>
 public partial class MainWindow
 {
-    private PresetFile _presetFile = new();
+    /// <summary>Presets and all app settings – loaded before the window is built so the screen-capture
+    /// protection and timers are right from the first frame.</summary>
+    private PresetFile _presetFile = PresetStore.Load();
     private bool _suppressPresetSelection;
 
     /// <summary>Loads presets and restores the last settings. Returns true if any were restored.</summary>
     private bool InitPresets()
     {
-        _presetFile = PresetStore.Load();
         RefreshPresetCombo(null);
-        HoverRevealCheck.IsChecked = _presetFile.HoverReveal; // predvolene false
         Argon2Calibrator.TargetMs = _presetFile.UnlockTargetSeconds * 1000.0; // clamped to 1–10 s
+        ApplySettings(); // timers, screen-capture protection, thresholds, logging
+        if (_presetFile.StartTab == "vault") MainTabs.SelectedItem = VaultTab;
 
         var last = _presetFile.Last;
         if (last is null) return false;
@@ -181,7 +183,6 @@ public partial class MainWindow
         var last = CapturePreset("(last used)");
         last.Recommended = recommended;
         _presetFile.Last = last;
-        _presetFile.HoverReveal = HoverRevealCheck.IsChecked == true;
         PresetStore.Save(_presetFile);
     }
 

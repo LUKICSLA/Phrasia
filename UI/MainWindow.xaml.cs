@@ -26,42 +26,13 @@ public partial class MainWindow : Window
         InitGeneratorPrivacy();
         InitVault();
         _statusTimer.Tick += (_, _) => { StatusText.Text = ""; _statusTimer.Stop(); };
-        UpdateThemeButton();
         ThemeManager.Changed += OnThemeChanged;
         Closed += (_, _) => ThemeManager.Changed -= OnThemeChanged;
-    }
-
-    /// <summary>Cycles the theme System → Light → Dark and remembers the choice.</summary>
-    private void Theme_Click(object sender, RoutedEventArgs e)
-    {
-        var next = ThemeManager.Mode switch
-        {
-            ThemeMode.System => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            _ => ThemeMode.System
-        };
-        ThemeManager.Apply(next);
-        _presetFile.Theme = ThemeManager.ToSetting(next);
-        PresetStore.Save(_presetFile);
-        Log.Info("Theme switched to {Mode}", next);
-    }
-
-    /// <summary>Shows the current theme mode on the header button.</summary>
-    private void UpdateThemeButton()
-    {
-        ThemeLabel.Text = ThemeManager.Mode.ToString();
-        ThemeIcon.Text = ThemeManager.Mode switch
-        {
-            ThemeMode.Light => "\uE706",   // sun
-            ThemeMode.Dark => "\uE708",    // moon
-            _ => "\uE7F4"                  // display (follow Windows)
-        };
     }
 
     /// <summary>Re-applies colors that are set from code (password digits/symbols, strength, vault health).</summary>
     private void OnThemeChanged()
     {
-        UpdateThemeButton();
         UpdateMainPasswordDisplay();
         if (_lastBits > 0)
         {

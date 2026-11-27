@@ -13,7 +13,8 @@ public partial class App : Application
     /// <summary>Initializes logging, installs global exception handlers, then starts the app.</summary>
     protected override void OnStartup(StartupEventArgs e)
     {
-        Logging.Configure();
+        var settings = PresetStore.Load();
+        Logging.Configure(settings.LogLevel, settings.LogKeepDays);
         Log.Info("Phrasia {Version} starting · {OS} · {Runtime} · {Arch}",
             Phrasia.MainWindow.AppVersion, RuntimeInformation.OSDescription,
             RuntimeInformation.FrameworkDescription, RuntimeInformation.ProcessArchitecture);
@@ -28,7 +29,7 @@ public partial class App : Application
             args.SetObserved();
         };
 
-        ThemeManager.Apply(ThemeManager.Parse(PresetStore.Load().Theme)); // before the main window is created
+        ThemeManager.Apply(ThemeManager.Parse(settings.Theme)); // before the main window is created
         Log.Info("Theme: {Mode} ({Palette})", ThemeManager.Mode, ThemeManager.IsDark ? "dark" : "light");
 
         base.OnStartup(e);
